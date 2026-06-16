@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 
 export const Route = createFileRoute("/_app/simulator")({
   head: () => ({ meta: [{ title: "What-If Simulator — Carbon Compass" }] }),
-  component: Simulator;
+  component: Simulator,
 });
 
 type Lever = { key: string; label: string; unit: string; max: number; default: number; perUnitKg: number; icon: typeof Car; hint: string };
