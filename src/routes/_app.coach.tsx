@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { suggestedQuestions } from "@/lib/mock-data";
-import { Send, Sparkles, Leaf, Bike, UtensilsCrossed } from "lucide-react";
+import { Send, Sparkles, Leaf, Bike, UtensilsCrossed, Train, Home, Loader2 } from "lucide-react";
 import { useState } from "react";
+import { useCarbonData } from "@/hooks/use-carbon-data";
+import { askCoach } from "@/lib/api/coach.functions";
 
 export const Route = createFileRoute("/_app/coach")({
   head: () => ({ meta: [{ title: "Carbon Coach — Carbon Compass" }] }),
@@ -11,32 +13,66 @@ export const Route = createFileRoute("/_app/coach")({
 
 type Msg = { role: "user" | "assistant"; text: string; cards?: { icon: string; title: string; detail: string; impact: string }[] };
 
-const initial: Msg[] = [
-  {
-    role: "assistant",
-    text: "Hi Alex 👋 I looked at your last 30 days. Transportation is your biggest contributor at 48% of your footprint. Here are three high-impact changes I'd suggest for this week:",
-    cards: [
-      { icon: "Bike", title: "Bike to work 2 days", detail: "Replaces 14 km of solo car commute", impact: "−8.4 kg CO₂e/week" },
-      { icon: "UtensilsCrossed", title: "Skip one delivery", detail: "Cook one weeknight dinner at home", impact: "−3.1 kg CO₂e/week" },
-      { icon: "Leaf", title: "Two plant-based lunches", detail: "Beans + grains over red meat", impact: "−4.2 kg CO₂e/week" },
-    ],
-  },
-];
-
-const iconMap = { Bike, UtensilsCrossed, Leaf, Sparkles } as const;
+const iconMap = { Bike, UtensilsCrossed, Leaf, Sparkles, Train, Home } as const;
 
 function Coach() {
-  const [messages, setMessages] = useState<Msg[]>(initial);
+  const { carbonProfile } = useCarbonData();
+  const userName = carbonProfile.name ? carbonProfile.name.split(" ")[0] : "there";
+  
+  const [messages, setMessages] = useState<Msg[]>(() => [
+    {
+      role: "assistant",
+      text: `Hi ${userName} 👋 I looked at your profile details. Based on your inputs, here are three high-impact suggestions I'd recommend starting with:`,
+      cards: [
+        { icon: "Bike", title: "Bike to work 2 days", detail: "Replaces 14 km of solo car commute", impact: "−8.4 kg CO₂e/week" },
+        { icon: "UtensilsCrossed", title: "Skip one delivery", detail: "Cook one weeknight dinner at home", impact: "−3.1 kg CO₂e/week" },
+        { icon: "Leaf", title: "Two plant-based lunches", detail: "Beans + grains over red meat", impact: "−4.2 kg CO₂e/week" },
+      ],
+    },
+  ]);
   const [input, setInput] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
 
-  function send(text: string) {
-    if (!text.trim()) return;
-    setMessages((m) => [
-      ...m,
-      { role: "user", text },
-      { role: "assistant", text: "Great question. Based on your profile, your single biggest lever is shifting 2 car commutes per week to the subway — that alone would save roughly 32 kg CO₂e per month, putting you ~11% under budget. Want me to add it as a weekly goal?" },
-    ]);
+  async function send(text: string) {
+    if (!text.trim() || isTyping) return;
     setInput("");
+    
+    setMessages((m) => [...m, { role: "user", text }]);
+    setIsTyping(true);
+
+    try {
+      const res = await askCoach({
+        data: {
+          question: text,
+          profile: {
+            monthlyBudgetKg: carbonProfile.monthlyBudgetKg,
+            usedKg: carbonProfile.usedKg,
+            remainingKg: carbonProfile.remainingKg,
+            answers: carbonProfile.answers
+          }
+        }
+      });
+
+      setMessages((m) => [
+        ...m,
+        {
+          role: "assistant",
+          text: res.text,
+          cards: res.cards
+        }
+      ]);
+    } catch (err) {
+      console.error(err);
+      setMessages((m) => [
+        ...m,
+        {
+          role: "assistant",
+          text: "I couldn't reach my cloud system, but based on your local profile, I suggest reducing commutes by 20% to save approximately 25 kg CO₂e per month."
+        }
+      ]);
+    } finally {
+      setIsTyping(false);
+    }
   }
 
   return (
@@ -53,7 +89,7 @@ function Coach() {
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto px-6 py-6 space-y-5">
+          <div className="flex-1 overflow-y-auto px-6 py-6 space-y-5" aria-live="polite">
             {messages.map((m, i) => (
               <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
                 <div className={`max-w-[85%] ${m.role === "user" ? "rounded-2xl rounded-br-sm bg-primary text-primary-foreground px-4 py-3" : "space-y-3"}`}>
@@ -78,6 +114,14 @@ function Coach() {
                 </div>
               </div>
             ))}
+            {isTyping && (
+              <div className="flex justify-start">
+                <div className="flex items-center gap-2 text-muted-foreground text-sm bg-accent/30 px-4 py-2.5 rounded-2xl">
+                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                  Analyzing footprint...
+                </div>
+              </div>
+            )}
           </div>
 
           <form
@@ -90,9 +134,10 @@ function Coach() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask anything about your footprint…"
-              className="flex-1 rounded-full bg-muted border border-transparent focus:border-ring focus:outline-none px-4 py-2.5 text-sm"
+              disabled={isTyping}
+              className="flex-1 rounded-full bg-muted border border-transparent focus:border-ring focus:outline-none px-4 py-2.5 text-sm disabled:opacity-55"
             />
-            <button type="submit" aria-label="Send" className="grid h-10 w-10 place-items-center rounded-full bg-primary text-primary-foreground hover:opacity-90">
+            <button type="submit" disabled={isTyping || !input.trim()} aria-label="Send" className="grid h-10 w-10 place-items-center rounded-full bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50 cursor-pointer">
               <Send className="h-4 w-4" />
             </button>
           </form>
@@ -104,7 +149,7 @@ function Coach() {
             <ul className="mt-3 space-y-2">
               {suggestedQuestions.map((q) => (
                 <li key={q}>
-                  <button onClick={() => send(q)} className="w-full text-left text-sm rounded-2xl border border-border px-4 py-3 hover:bg-accent/40 transition">
+                  <button onClick={() => send(q)} disabled={isTyping} className="w-full text-left text-sm rounded-2xl border border-border px-4 py-3 hover:bg-accent/40 transition disabled:opacity-50 cursor-pointer">
                     {q}
                   </button>
                 </li>

@@ -1,9 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { Car, Train, UtensilsCrossed, Home, Lightbulb } from "lucide-react";
+import { useCarbonData } from "@/hooks/use-carbon-data";
 import { useMemo, useState } from "react";
 
 export const Route = createFileRoute("/_app/simulator")({
+
   head: () => ({ meta: [{ title: "What-If Simulator — Carbon Compass" }] }),
   component: Simulator,
 });
@@ -18,12 +20,31 @@ const levers: Lever[] = [
 ];
 
 function Simulator() {
-  const [values, setValues] = useState<Record<string, number>>(() =>
-    Object.fromEntries(levers.map((l) => [l.key, l.default]))
-  );
+  const { carbonProfile } = useCarbonData();
+  const answers = carbonProfile.answers || {};
 
-  const baseline = useMemo(() => levers.reduce((sum, l) => sum + l.default * l.perUnitKg, 0), []);
+  const initialValues = useMemo(() => {
+    return {
+      transit: answers.commute === "transit" ? 4 : 1,
+      car: answers.commute === "car" ? 6 : 2,
+      delivery: answers.shopping === "often" ? 6 : answers.shopping === "weekly" ? 3 : 1,
+      wfh: answers.wfh ?? 2,
+    };
+  }, [answers]);
+
+  const [values, setValues] = useState<Record<string, number>>(initialValues);
+
+  const baseline = useMemo(() => {
+    return (
+      initialValues.transit * -4.2 +
+      initialValues.car * 3.6 +
+      initialValues.delivery * 1.8 +
+      initialValues.wfh * -2.1
+    );
+  }, [initialValues]);
+
   const projected = useMemo(() => levers.reduce((sum, l) => sum + values[l.key] * l.perUnitKg, 0), [values]);
+
   const weeklyDelta = projected - baseline;
   const monthlyDelta = weeklyDelta * 4.33;
   const annualDelta = weeklyDelta * 52;

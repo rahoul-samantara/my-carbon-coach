@@ -14,7 +14,197 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          id: string
+          name: string | null
+          email: string | null
+          city: string | null
+          created_at: string
+        }
+        Insert: {
+          id: string
+          name?: string | null
+          email?: string | null
+          city?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string | null
+          email?: string | null
+          city?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_id_fkey"
+            columns: ["id"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      carbon_profiles: {
+        Row: {
+          id: string
+          user_id: string
+          commute_mode: string | null
+          weekly_distance: number | null
+          diet: string | null
+          household_size: number | null
+          shopping_frequency: string | null
+          wfh_days: number | null
+          transportation_score: number | null
+          food_score: number | null
+          energy_score: number | null
+          shopping_score: number | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          commute_mode?: string | null
+          weekly_distance?: number | null
+          diet?: string | null
+          household_size?: number | null
+          shopping_frequency?: string | null
+          wfh_days?: number | null
+          transportation_score?: number | null
+          food_score?: number | null
+          energy_score?: number | null
+          shopping_score?: number | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          commute_mode?: string | null
+          weekly_distance?: number | null
+          diet?: string | null
+          household_size?: number | null
+          shopping_frequency?: string | null
+          wfh_days?: number | null
+          transportation_score?: number | null
+          food_score?: number | null
+          energy_score?: number | null
+          shopping_score?: number | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "carbon_profiles_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      carbon_budgets: {
+        Row: {
+          id: string
+          user_id: string
+          monthly_budget: number
+          current_usage: number
+          remaining_budget: number
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          monthly_budget?: number
+          current_usage?: number
+          remaining_budget?: number
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          monthly_budget?: number
+          current_usage?: number
+          remaining_budget?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "carbon_budgets_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      activities: {
+        Row: {
+          id: string
+          user_id: string
+          label: string
+          category: string
+          kg: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          label: string
+          category: string
+          kg: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          label?: string
+          category?: string
+          kg?: number
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activities_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      goals: {
+        Row: {
+          id: string
+          user_id: string
+          title: string
+          progress: number
+          reward: string
+          completed: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          title: string
+          progress?: number
+          reward: string
+          completed?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          title?: string
+          progress?: number
+          reward?: string
+          completed?: boolean
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goals_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never

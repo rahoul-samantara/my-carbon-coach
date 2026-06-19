@@ -1,7 +1,16 @@
-import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, MessageSquareHeart, SlidersHorizontal, LineChart, Sprout, Bell } from "lucide-react";
+import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
+import { LayoutDashboard, MessageSquareHeart, SlidersHorizontal, LineChart, Sprout, Bell, LogIn, LogOut, ShieldAlert } from "lucide-react";
 import { type ReactNode } from "react";
 import { Logo } from "./Logo";
+import { useCarbonData } from "../hooks/use-carbon-data";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
 
 const nav = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -12,6 +21,16 @@ const nav = [
 
 export function AppShell({ children, title, subtitle }: { children: ReactNode; title: string; subtitle?: string }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const navigate = useNavigate();
+  const { carbonProfile, user, signOutUser } = useCarbonData();
+
+  const userDisplayName = user?.user_metadata?.full_name || carbonProfile.name;
+  const userInitials = userDisplayName
+    .split(" ")
+    .map((n: string) => n[0])
+    .join("")
+    .substring(0, 2)
+    .toUpperCase() || "AR";
 
   return (
     <div className="min-h-dvh surface-gradient">
@@ -45,7 +64,7 @@ export function AppShell({ children, title, subtitle }: { children: ReactNode; t
               <Sprout className="h-4 w-4 text-leaf" />
               Carbon Profile
             </div>
-            <div className="mt-2 font-display text-2xl font-semibold">580 kg</div>
+            <div className="mt-2 font-display text-2xl font-semibold">{carbonProfile.monthlyBudgetKg} kg</div>
             <div className="text-xs text-muted-foreground">monthly budget</div>
             <Link to="/onboarding" className="mt-3 inline-block text-xs font-medium text-primary hover:underline">
               Retake assessment →
@@ -58,9 +77,28 @@ export function AppShell({ children, title, subtitle }: { children: ReactNode; t
           {/* Mobile top bar */}
           <div className="lg:hidden mb-4 flex items-center justify-between">
             <Logo />
-            <button aria-label="Notifications" className="grid h-10 w-10 place-items-center rounded-full border border-border bg-card">
-              <Bell className="h-4 w-4" />
-            </button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button aria-label="User Menu" className="grid h-10 w-10 place-items-center rounded-full border border-border bg-card text-xs font-semibold">
+                  {userInitials}
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 mt-1 rounded-2xl p-2 border border-border bg-card shadow-lg">
+                <DropdownMenuLabel className="px-3 py-2 text-xs font-semibold text-muted-foreground">
+                  {user ? `Logged in as ${user.email}` : "Guest Mode"}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator className="my-1 border-b border-border" />
+                {user ? (
+                  <DropdownMenuItem onClick={signOutUser} className="flex items-center gap-2 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 rounded-xl cursor-pointer">
+                    <LogOut className="h-4 w-4" /> Sign Out
+                  </DropdownMenuItem>
+                ) : (
+                  <DropdownMenuItem onClick={() => navigate({ to: "/auth" })} className="flex items-center gap-2 px-3 py-2 text-sm text-primary hover:bg-primary/10 rounded-xl cursor-pointer">
+                    <LogIn className="h-4 w-4" /> Sign In / Sign Up
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           <header className="mb-6 flex items-end justify-between gap-4 flex-wrap">
@@ -69,16 +107,41 @@ export function AppShell({ children, title, subtitle }: { children: ReactNode; t
               {subtitle && <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>}
             </div>
             <div className="hidden lg:flex items-center gap-3">
+              {!user && (
+                <div className="flex items-center gap-1.5 text-xs text-warning bg-warning/10 border border-warning/20 px-3 py-1.5 rounded-full">
+                  <ShieldAlert className="h-3.5 w-3.5" /> Offline Mode (Local Storage)
+                </div>
+              )}
               <button aria-label="Notifications" className="grid h-10 w-10 place-items-center rounded-full border border-border bg-card hover:bg-accent transition">
                 <Bell className="h-4 w-4" />
               </button>
-              <div className="flex items-center gap-3 rounded-full border border-border bg-card pl-1 pr-4 py-1">
-                <div className="grid h-8 w-8 place-items-center rounded-full bg-primary text-primary-foreground text-xs font-semibold">AR</div>
-                <div className="text-xs">
-                  <div className="font-medium">Alex Rivera</div>
-                  <div className="text-muted-foreground">Brooklyn</div>
-                </div>
-              </div>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-3 rounded-full border border-border bg-card pl-1 pr-4 py-1 hover:bg-accent/30 transition text-left cursor-pointer">
+                    <div className="grid h-8 w-8 place-items-center rounded-full bg-primary text-primary-foreground text-xs font-semibold">{userInitials}</div>
+                    <div className="text-xs">
+                      <div className="font-medium truncate max-w-[120px]">{userDisplayName}</div>
+                      <div className="text-muted-foreground text-[10px]">{user ? "Cloud Synced" : "Guest User"}</div>
+                    </div>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56 mt-1 rounded-2xl p-2 border border-border bg-card shadow-lg">
+                  <DropdownMenuLabel className="px-3 py-2 text-xs font-semibold text-muted-foreground">
+                    {user ? `Logged in as ${user.email}` : "Guest Account"}
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator className="my-1 border-b border-border" />
+                  {user ? (
+                    <DropdownMenuItem onClick={signOutUser} className="flex items-center gap-2 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 rounded-xl cursor-pointer">
+                      <LogOut className="h-4 w-4" /> Sign Out
+                    </DropdownMenuItem>
+                  ) : (
+                    <DropdownMenuItem onClick={() => navigate({ to: "/auth" })} className="flex items-center gap-2 px-3 py-2 text-sm text-primary hover:bg-primary/10 rounded-xl cursor-pointer">
+                      <LogIn className="h-4 w-4" /> Sign In / Sign Up
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </header>
 
@@ -109,3 +172,4 @@ export function AppShell({ children, title, subtitle }: { children: ReactNode; t
     </div>
   );
 }
+

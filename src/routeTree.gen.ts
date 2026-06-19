@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app.index'
 import { Route as AppSimulatorRouteImport } from './routes/_app.simulator'
@@ -19,6 +20,11 @@ import { Route as AppCoachRouteImport } from './routes/_app.coach'
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppRoute = AppRouteImport.update({
@@ -48,12 +54,14 @@ const AppCoachRoute = AppCoachRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
+  '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
   '/coach': typeof AppCoachRoute
   '/progress': typeof AppProgressRoute
   '/simulator': typeof AppSimulatorRoute
 }
 export interface FileRoutesByTo {
+  '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
   '/coach': typeof AppCoachRoute
   '/progress': typeof AppProgressRoute
@@ -63,6 +71,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
+  '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
   '/_app/coach': typeof AppCoachRoute
   '/_app/progress': typeof AppProgressRoute
@@ -71,12 +80,19 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/onboarding' | '/coach' | '/progress' | '/simulator'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/onboarding'
+    | '/coach'
+    | '/progress'
+    | '/simulator'
   fileRoutesByTo: FileRoutesByTo
-  to: '/onboarding' | '/coach' | '/progress' | '/simulator' | '/'
+  to: '/auth' | '/onboarding' | '/coach' | '/progress' | '/simulator' | '/'
   id:
     | '__root__'
     | '/_app'
+    | '/auth'
     | '/onboarding'
     | '/_app/coach'
     | '/_app/progress'
@@ -86,6 +102,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
+  AuthRoute: typeof AuthRoute
   OnboardingRoute: typeof OnboardingRoute
 }
 
@@ -96,6 +113,13 @@ declare module '@tanstack/react-router' {
       path: '/onboarding'
       fullPath: '/onboarding'
       preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app': {
@@ -154,6 +178,7 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
+  AuthRoute: AuthRoute,
   OnboardingRoute: OnboardingRoute,
 }
 export const routeTree = rootRouteImport

@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Logo } from "@/components/Logo";
 import { useState } from "react";
 import { ArrowLeft, ArrowRight, Bike, Bus, Car, Train, Leaf, Beef, Salad, Home, ShoppingBag, CheckCircle2 } from "lucide-react";
+import { useCarbonData, calculateBudget } from "@/hooks/use-carbon-data";
 
 export const Route = createFileRoute("/onboarding")({
   head: () => ({ meta: [{ title: "Get started — Carbon Compass" }] }),
@@ -28,6 +29,7 @@ const steps = [
 
 function Onboarding() {
   const navigate = useNavigate();
+  const { saveOnboarding } = useCarbonData();
   const [step, setStep] = useState(0);
   const [done, setDone] = useState(false);
   const [a, setA] = useState<Answers>({ distance: 60, household: 2, wfh: 2 });
@@ -43,7 +45,12 @@ function Onboarding() {
     if (step > 0) setStep(step - 1);
   }
 
-  if (done) return <Result onContinue={() => navigate({ to: "/" })} />;
+  const handleComplete = async () => {
+    await saveOnboarding(a);
+    navigate({ to: "/" });
+  };
+
+  if (done) return <Result answers={a} onContinue={handleComplete} />;
 
   return (
     <div className="min-h-dvh surface-gradient flex flex-col">
@@ -60,7 +67,7 @@ function Onboarding() {
             <span>Step {step + 1} of {steps.length}</span>
             <span>{Math.round(progress)}%</span>
           </div>
-          <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+          <div className="h-1.5 rounded-full bg-muted overflow-hidden" role="progressbar" aria-valuenow={Math.round(progress)} aria-valuemin={0} aria-valuemax={100} aria-label="Onboarding step completion progress">
             <div className="h-full bg-primary transition-all duration-500" style={{ width: `${progress}%` }} />
           </div>
         </div>
@@ -199,12 +206,14 @@ function Slider({ value, onChange, min, max, step, unit, icon: Icon }: {
   );
 }
 
-function Result({ onContinue }: { onContinue: () => void }) {
+function Result({ answers, onContinue }: { answers: Answers; onContinue: () => void }) {
+  const scores = calculateBudget(answers);
+  
   const summary = [
-    { label: "Transportation", impact: "High", color: "var(--chart-1)", note: "Your largest contributor — biggest opportunity." },
-    { label: "Food", impact: "Medium", color: "var(--chart-2)", note: "A flexitarian shift could save ~15%." },
-    { label: "Energy", impact: "Low", color: "var(--chart-3)", note: "Hybrid work keeps this in check." },
-    { label: "Shopping", impact: "Low", color: "var(--chart-4)", note: "Consolidating orders helps further." },
+    { label: "Transportation", impact: scores.transScore > 150 ? "High" : scores.transScore > 80 ? "Medium" : "Low", color: "var(--chart-1)", note: scores.transScore > 150 ? "Your largest contributor — biggest opportunity." : "Great, transportation emissions are low!" },
+    { label: "Food", impact: scores.foodScore > 150 ? "High" : scores.foodScore > 80 ? "Medium" : "Low", color: "var(--chart-2)", note: answers.diet === "meat" ? "A shift toward flexitarian could save ~15%." : "Excellent diet selection." },
+    { label: "Energy", impact: scores.energyScore > 100 ? "High" : scores.energyScore > 50 ? "Medium" : "Low", color: "var(--chart-3)", note: `Household sizing of ${answers.household || 1} offsets baseline energy.` },
+    { label: "Shopping", impact: scores.shopScore > 80 ? "High" : scores.shopScore > 40 ? "Medium" : "Low", color: "var(--chart-4)", note: "Ordering in bundles reduces packaging impact." },
   ];
 
   return (
@@ -215,7 +224,7 @@ function Result({ onContinue }: { onContinue: () => void }) {
             <CheckCircle2 className="h-6 w-6" />
           </span>
           <h1 className="mt-5 font-display text-4xl sm:text-5xl font-semibold leading-tight">Your Carbon Profile</h1>
-          <p className="mt-3 text-muted-foreground">Initial budget set to <span className="font-semibold text-foreground">580 kg CO₂e / month</span>.</p>
+          <p className="mt-3 text-muted-foreground">Initial budget set to <span className="font-semibold text-foreground">{scores.monthlyBudget} kg CO₂e / month</span>.</p>
         </div>
 
         <ul className="mt-10 space-y-3">
@@ -245,3 +254,4 @@ function Result({ onContinue }: { onContinue: () => void }) {
     </div>
   );
 }
+

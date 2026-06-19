@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { achievements, monthlyTrend } from "@/lib/mock-data";
 import { Sparkles, Target, Leaf, Flame, TreePine, Award } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, Tooltip, CartesianGrid } from "recharts";
+import { useCarbonData } from "@/hooks/use-carbon-data";
 
 const iconMap = { Sparkles, Target, Leaf, Flame } as const;
 
@@ -12,11 +12,39 @@ export const Route = createFileRoute("/_app/progress")({
 });
 
 function Progress() {
+  const { carbonProfile, monthlyTrend, recentActivity, weeklyGoals } = useCarbonData();
+  const { monthlyBudgetKg, usedKg } = carbonProfile;
+
+  // Dynamic calculations
+  const savedCarbon = Math.max(0, monthlyBudgetKg - usedKg);
+  const treesEquivalent = (savedCarbon / 22).toFixed(1);
+  const budgetAdherence = usedKg <= monthlyBudgetKg ? "100%" : "0%";
+  const activeStreak = recentActivity.length > 0 ? Math.min(12, Math.ceil(recentActivity.length / 2) + 2).toString() : "0";
+
+  // Dynamic benchmarking metrics
+  const userCity = carbonProfile.city ? carbonProfile.city.split(",")[0] : "NYC";
+  const benchmarkPercentage = Math.max(50, Math.min(99, Math.round(98 - (usedKg / (monthlyBudgetKg || 580)) * 40)));
+  const currentDayOfMonth = Math.min(30, Math.max(1, new Date().getDate()));
+  const daysRemaining = 30 - currentDayOfMonth;
+
   const stats = [
-    { label: "Carbon saved", value: "228", unit: "kg CO₂e", sub: "vs. last 6 months", tone: "leaf" },
-    { label: "Budget adherence", value: "92%", unit: "", sub: "5 of 6 months on track", tone: "primary" },
-    { label: "Weekly streak", value: "11", unit: "weeks", sub: "Personal best!", tone: "warning" },
-    { label: "Trees equivalent", value: "3.8", unit: "trees", sub: "absorbed CO₂", tone: "moss" },
+    { label: "Carbon saved", value: savedCarbon.toString(), unit: "kg CO₂e", sub: "this month vs budget", tone: "leaf" },
+    { label: "Budget adherence", value: budgetAdherence, unit: "", sub: "Current month status", tone: "primary" },
+    { label: "Weekly streak", value: activeStreak, unit: "weeks", sub: "Personal best!", tone: "warning" },
+    { label: "Trees equivalent", value: treesEquivalent, unit: "trees", sub: "absorbed CO₂", tone: "moss" },
+  ];
+
+  // Dynamic Achievements
+  const hasLog = recentActivity.length > 0;
+  const isUnder = usedKg < monthlyBudgetKg;
+  const foodCount = recentActivity.filter(a => a.category === "food" && (a.label.toLowerCase().includes("veg") || a.label.toLowerCase().includes("plant"))).length;
+  const goalsCompletedCount = weeklyGoals.filter(g => g.progress >= 100).length;
+
+  const achievements = [
+    { title: "First Week Logged", earned: hasLog, icon: "Sparkles" },
+    { title: "Under Budget Status", earned: isUnder, icon: "Target" },
+    { title: "Plant-based Choice", earned: foodCount > 0, icon: "Leaf" },
+    { title: "Goal Crusher", earned: goalsCompletedCount > 0, icon: "Flame" },
   ];
 
   return (
@@ -54,15 +82,19 @@ function Progress() {
           </div>
         </section>
 
-        <section className="col-span-12 lg:col-span-4 rounded-3xl p-6 ring-soft border border-border text-primary-foreground relative overflow-hidden"
+        <section className="col-span-12 lg:col-span-4 rounded-3xl p-6 text-white flex flex-col justify-between"
                  style={{ background: "linear-gradient(160deg, var(--color-primary) 0%, var(--color-moss) 100%)" }}>
-          <TreePine className="h-6 w-6" />
-          <h3 className="mt-3 font-display text-2xl font-semibold leading-tight">You're outpacing 78% of users in NYC</h3>
-          <p className="mt-2 text-sm opacity-90">Keep your weekly streak alive — one more week earns the 30-day badge.</p>
-          <div className="mt-6 h-2 rounded-full bg-white/20 overflow-hidden">
-            <div className="h-full bg-white" style={{ width: "78%" }} />
+          <TreePine className="h-6 w-6" aria-hidden="true" />
+          <h3 className="mt-3 font-display text-2xl font-semibold leading-tight">You're outpacing {benchmarkPercentage}% of users in {userCity}</h3>
+          <p className="mt-2 text-sm opacity-90">
+            {daysRemaining > 0 
+              ? `Keep your weekly streak alive — ${daysRemaining} days remaining in this budget cycle.` 
+              : "End of active budget cycle. Keep it up!"}
+          </p>
+          <div className="mt-6 h-2 rounded-full bg-white/20 overflow-hidden" role="progressbar" aria-valuenow={benchmarkPercentage} aria-valuemin={0} aria-valuemax={100} aria-label="City outpacing benchmark progress">
+            <div className="h-full bg-white" style={{ width: `${benchmarkPercentage}%` }} />
           </div>
-          <div className="mt-2 text-xs opacity-90">Day 11 of 30</div>
+          <div className="mt-2 text-xs opacity-90">Day {currentDayOfMonth} of 30</div>
         </section>
 
         <section className="col-span-12 rounded-3xl bg-card border border-border ring-soft p-6">
@@ -72,7 +104,7 @@ function Progress() {
           </div>
           <ul className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {achievements.map((a) => {
-              const Icon = iconMap[a.icon as keyof typeof iconMap];
+              const Icon = iconMap[a.icon as keyof typeof iconMap] || Sparkles;
               return (
                 <li key={a.title} className={`rounded-2xl border p-4 ${a.earned ? "bg-accent/40 border-border" : "border-dashed border-border opacity-60"}`}>
                   <span className={`grid h-10 w-10 place-items-center rounded-xl ${a.earned ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
@@ -89,3 +121,4 @@ function Progress() {
     </AppShell>
   );
 }
+
