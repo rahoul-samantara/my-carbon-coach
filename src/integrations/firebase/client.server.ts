@@ -1,6 +1,6 @@
 import * as adminNs from "firebase-admin";
 
-const admin = adminNs as any;
+const admin = adminNs;
 
 function createFirebaseAdminClient() {
   const FIREBASE_PROJECT_ID =
@@ -24,9 +24,9 @@ function createFirebaseAdminClient() {
   return admin;
 }
 
-let _firebaseAdmin: any | undefined;
+let _firebaseAdmin: typeof adminNs | undefined;
 
-export const firebaseAdmin: any = new Proxy({} as any, {
+export const firebaseAdmin = new Proxy({} as typeof adminNs, {
   get(_, prop, receiver) {
     if (!_firebaseAdmin) _firebaseAdmin = createFirebaseAdminClient();
     return Reflect.get(_firebaseAdmin, prop, receiver);

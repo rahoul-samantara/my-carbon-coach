@@ -194,3 +194,112 @@
 @utility ring-lift {
   box-shadow: var(--shadow-lift);
 }
+
+/* Premium Animations and Transitions */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulseHighlight {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-page-enter {
+  animation: fadeInUp 220ms cubic-bezier(0.21, 1.02, 0.43, 1.01) forwards;
+}
+
+.animate-card-fade-in {
+  animation: fadeInUp 250ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Staggered card entries */
+.stagger-1 {
+  animation-delay: 40ms;
+  opacity: 0;
+  animation-fill-mode: forwards;
+}
+.stagger-2 {
+  animation-delay: 80ms;
+  opacity: 0;
+  animation-fill-mode: forwards;
+}
+.stagger-3 {
+  animation-delay: 120ms;
+  opacity: 0;
+  animation-fill-mode: forwards;
+}
+.stagger-4 {
+  animation-delay: 160ms;
+  opacity: 0;
+  animation-fill-mode: forwards;
+}
+.stagger-5 {
+  animation-delay: 200ms;
+  opacity: 0;
+  animation-fill-mode: forwards;
+}
+
+.animate-step-enter {
+  animation: slideInRight 250ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-pulse-highlight {
+  animation: pulseHighlight 200ms ease-in-out;
+}
+
+/* Smooth modal scaling transitions */
+[data-state="open"].dialog-content-anim {
+  animation: fadeInUp 200ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Smooth transitions for simulator Lever sliders & results */
+.transition-simulator {
+  transition:
+    transform 200ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 200ms ease,
+    border-color 200ms ease,
+    box-shadow 200ms ease;
+}
+
+/* Accessibility: Respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .animate-page-enter,
+  .animate-card-fade-in,
+  .animate-step-enter,
+  .animate-pulse-highlight,
+  [data-state="open"].dialog-content-anim {
+    animation: none !important;
+    transition: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .transition-simulator {
+    transition: none !important;
+  }
+}

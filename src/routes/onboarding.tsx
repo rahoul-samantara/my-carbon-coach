@@ -121,7 +121,10 @@ function Onboarding() {
           </div>
         </div>
 
-        <div className="rounded-3xl bg-card border border-border ring-soft p-8 sm:p-12 flex-1">
+        <div
+          key={step}
+          className="rounded-3xl bg-card border border-border ring-soft p-8 sm:p-12 flex-1 animate-step-enter"
+        >
           <h1 className="font-display text-3xl sm:text-4xl font-semibold leading-tight max-w-2xl">
             {current.title}
           </h1>
@@ -230,20 +233,21 @@ function ChoiceGrid({
   onChange: (v: string) => void;
 }) {
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3" role="radiogroup" aria-label="Options">
       {options.map((o) => {
         const Icon = o.icon;
         const active = value === o.v;
         return (
           <button
             key={o.v}
+            role="radio"
+            aria-checked={active}
             onClick={() => onChange(o.v)}
             className={`rounded-2xl border p-5 text-left transition ${
               active
                 ? "border-primary bg-accent/60 ring-2 ring-primary/30"
                 : "border-border bg-card hover:bg-accent/30"
             }`}
-            aria-pressed={active}
           >
             <span
               className={`grid h-10 w-10 place-items-center rounded-xl ${active ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"}`}

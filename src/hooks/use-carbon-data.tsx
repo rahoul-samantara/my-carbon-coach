@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 import { auth, db } from "@/integrations/firebase/client";
 import { onAuthStateChanged } from "firebase/auth";
 import {
@@ -15,8 +15,7 @@ import {
 } from "firebase/firestore";
 import { User } from "firebase/auth";
 import { toast } from "sonner";
-import { supabase as _supabase } from "@/integrations/supabase/client";
-const supabase = _supabase as any;
+// Removed Supabase import
 
 import { OnboardingAnswers, calculateBudget } from "@/lib/carbon-utils";
 
@@ -182,22 +181,7 @@ export const CarbonDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     loadLocalData();
   }, []);
 
-  // Listen to Auth state changes
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
-      if (currentUser) {
-        await loadUserData(currentUser);
-      } else {
-        setProfile(null);
-        setLoading(false);
-      }
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  const loadUserData = async (currentUser: User) => {
+  const loadUserData = useCallback(async (currentUser: User) => {
     try {
       setLoading(true);
       // 1. Load Profile
@@ -223,15 +207,22 @@ export const CarbonDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       // 4. Load Activities
       const actQuery = query(collection(db, "activities"), where("user_id", "==", currentUser.uid));
       const actDocs = await getDocs(actQuery);
-      const activities: any[] = actDocs.docs.map((d) => ({ id: d.id, ...d.data() }));
+      const activities = actDocs.docs.map((d) => ({
+        id: d.id,
+        ...(d.data() as Record<string, unknown>),
+      }));
       activities.sort(
-        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+        (a, b) =>
+          new Date(b.created_at as string).getTime() - new Date(a.created_at as string).getTime(),
       );
 
       // 5. Load Goals
       const goalsQuery = query(collection(db, "goals"), where("user_id", "==", currentUser.uid));
       const goalsDocs = await getDocs(goalsQuery);
-      const goals: any[] = goalsDocs.docs.map((d) => ({ id: d.id, ...d.data() }));
+      const goals = goalsDocs.docs.map((d) => ({
+        id: d.id,
+        ...(d.data() as Record<string, unknown>),
+      }));
 
       if (carbProf && carbBudget) {
         const answers: OnboardingAnswers = {
@@ -250,8 +241,8 @@ export const CarbonDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           monthlyBudgetKg: budget,
           usedKg: used,
           remainingKg: Math.max(0, budget - used),
-          name: profileData?.name || (currentUser as any).user_metadata?.full_name || "Eco User",
-          city: profileData?.city || (currentUser as any).user_metadata?.city || "Brooklyn, NY",
+          name: profileData?.name || currentUser.displayName || "Eco User",
+          city: profileData?.city || "Brooklyn, NY",
           joined: new Date(profileData?.created_at || Date.now()).toLocaleDateString("en-US", {
             month: "long",
             year: "numeric",
@@ -357,222 +348,273 @@ export const CarbonDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const saveOnboarding = async (answers: OnboardingAnswers) => {
-    const scores = calculateBudget(answers);
-    const updatedProfile: CarbonProfile = {
-      monthlyBudgetKg: scores.monthlyBudget,
-      usedKg: 0,
-      remainingKg: scores.monthlyBudget,
-      name: profile?.name || carbonProfileState.name,
-      city: profile?.city || carbonProfileState.city,
-      joined: carbonProfileState.joined,
-      answers,
-    };
-
-    const newCategories: CategoryData[] = [
-      {
-        key: "transport",
-        label: "Transportation",
-        usedKg: 0,
-        budgetKg: scores.transScore,
-        impact: scores.transScore > 150 ? "High" : scores.transScore > 80 ? "Medium" : "Low",
-        color: "var(--chart-1)",
-      },
-      {
-        key: "food",
-        label: "Food",
-        usedKg: 0,
-        budgetKg: scores.foodScore,
-        impact: scores.foodScore > 150 ? "High" : scores.foodScore > 80 ? "Medium" : "Low",
-        color: "var(--chart-2)",
-      },
-      {
-        key: "energy",
-        label: "Energy",
-        usedKg: 0,
-        budgetKg: scores.energyScore,
-        impact: scores.energyScore > 100 ? "High" : scores.energyScore > 50 ? "Medium" : "Low",
-        color: "var(--chart-3)",
-      },
-      {
-        key: "shopping",
-        label: "Shopping",
-        usedKg: 0,
-        budgetKg: scores.shopScore,
-        impact: scores.shopScore > 80 ? "High" : scores.shopScore > 40 ? "Medium" : "Low",
-        color: "var(--chart-4)",
-      },
-    ];
-
-    const defaultGoals = [
-      {
-        title: "Bike to work 2× this week",
-        progress: 0,
-        reward: `−${Math.round(scores.transScore * 0.15)} kg CO₂e`,
-      },
-      { title: "Skip one food delivery", progress: 0, reward: "−3 kg CO₂e" },
-      { title: "Plant-based dinners ×4", progress: 0, reward: "−6 kg CO₂e" },
-    ];
-
-    // Update locally
-    setCarbonProfileState(updatedProfile);
-    setCategoriesState(newCategories);
-    setWeeklyGoalsState(defaultGoals);
-    setRecentActivityState([]);
-
-    localStorage.setItem("cc_profile", JSON.stringify(updatedProfile));
-    localStorage.setItem("cc_categories", JSON.stringify(newCategories));
-    localStorage.setItem("cc_goals", JSON.stringify(defaultGoals));
-    localStorage.setItem("cc_activities", JSON.stringify([]));
-
-    // Update in Supabase if logged in
-    if (user) {
-      try {
-        const { error: profileUpsertErr } = await supabase.from("carbon_profiles").upsert(
-          {
-            user_id: (user as any).uid,
-            commute_mode: answers.commute,
-            weekly_distance: answers.distance,
-            diet: answers.diet,
-            household_size: answers.household,
-            shopping_frequency: answers.shopping,
-            wfh_days: answers.wfh,
-            transportation_score: scores.transScore,
-            food_score: scores.foodScore,
-            energy_score: scores.energyScore,
-            shopping_score: scores.shopScore,
-          },
-          { onConflict: "user_id" },
-        );
-
-        const { error: budgetUpsertErr } = await supabase.from("carbon_budgets").upsert(
-          {
-            user_id: (user as any).uid,
-            monthly_budget: scores.monthlyBudget,
-            current_usage: 0,
-            remaining_budget: scores.monthlyBudget,
-          },
-          { onConflict: "user_id" },
-        );
-
-        // Clean out existing goals and insert new ones
-        await supabase.from("goals").delete().eq("user_id", (user as any).uid);
-        await supabase.from("activities").delete().eq("user_id", (user as any).uid);
-
-        await supabase.from("goals").insert(
-          defaultGoals.map((g) => ({
-            user_id: (user as any).uid,
-            title: g.title,
-            progress: g.progress,
-            reward: g.reward,
-            completed: false,
-          })),
-        );
-
-        toast.success("Carbon Profile saved and synced with cloud!");
-      } catch (err) {
-        console.error("Supabase onboarding sync failed", err);
-        toast.warning("Profile saved locally (Offline mode)");
+  // Listen to Auth state changes
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        await loadUserData(currentUser);
+      } else {
+        setProfile(null);
+        setLoading(false);
       }
-    } else {
-      toast.success("Carbon Profile saved locally! Sign in to sync to cloud.");
-    }
-  };
-
-  const logNewActivity = async (label: string, category: string, kg: number) => {
-    const newActivity: Activity = {
-      id: Date.now(),
-      label,
-      category,
-      kg,
-      when: "Just now",
-    };
-
-    const updatedActivities = [newActivity, ...recentActivityState];
-    setRecentActivityState(updatedActivities);
-    localStorage.setItem("cc_activities", JSON.stringify(updatedActivities));
-
-    // Update categories usage
-    const updatedCategories = categoriesState.map((cat) => {
-      if (cat.key === category) {
-        const newUsed = Number((cat.usedKg + kg).toFixed(1));
-        return { ...cat, usedKg: newUsed };
-      }
-      return cat;
-    });
-    setCategoriesState(updatedCategories);
-    localStorage.setItem("cc_categories", JSON.stringify(updatedCategories));
-
-    // Update profile budget
-    const newUsedKg = Number((carbonProfileState.usedKg + kg).toFixed(1));
-    const updatedProfile = {
-      ...carbonProfileState,
-      usedKg: newUsedKg,
-      remainingKg: Math.max(0, Number((carbonProfileState.monthlyBudgetKg - newUsedKg).toFixed(1))),
-    };
-    setCarbonProfileState(updatedProfile);
-    localStorage.setItem("cc_profile", JSON.stringify(updatedProfile));
-
-    if (user) {
-      try {
-        await supabase.from("activities").insert({
-          user_id: (user as any).uid,
-          label,
-          category,
-          kg,
-        });
-
-        await supabase
-          .from("carbon_budgets")
-          .update({
-            current_usage: newUsedKg,
-            remaining_budget: updatedProfile.remainingKg,
-          })
-          .eq("user_id", (user as any).uid);
-
-        toast.success("Activity logged to cloud!");
-      } catch (err) {
-        console.error("Failed to log activity to Supabase", err);
-        toast.warning("Activity saved locally (Offline)");
-      }
-    } else {
-      toast.success("Activity logged locally!");
-    }
-  };
-
-  const updateGoalProgress = async (title: string, progress: number) => {
-    const updatedGoals = weeklyGoalsState.map((g) => {
-      if (g.title === title) {
-        return { ...g, progress, completed: progress >= 100 };
-      }
-      return g;
     });
 
-    setWeeklyGoalsState(updatedGoals);
-    localStorage.setItem("cc_goals", JSON.stringify(updatedGoals));
+    return () => unsubscribe();
+  }, [loadUserData]);
 
-    if (user) {
-      try {
-        await supabase
-          .from("goals")
-          .update({ progress, completed: progress >= 100 })
-          .eq("user_id", (user as any).uid)
-          .eq("title", title);
-      } catch (err) {
-        console.error("Failed to sync goal to Supabase", err);
+  const saveOnboarding = useCallback(
+    async (answers: OnboardingAnswers) => {
+      const scores = calculateBudget(answers);
+      const updatedProfile: CarbonProfile = {
+        monthlyBudgetKg: scores.monthlyBudget,
+        usedKg: 0,
+        remainingKg: scores.monthlyBudget,
+        name: profile?.name || carbonProfileState.name,
+        city: profile?.city || carbonProfileState.city,
+        joined: carbonProfileState.joined,
+        answers,
+      };
+
+      const newCategories: CategoryData[] = [
+        {
+          key: "transport",
+          label: "Transportation",
+          usedKg: 0,
+          budgetKg: scores.transScore,
+          impact: scores.transScore > 150 ? "High" : scores.transScore > 80 ? "Medium" : "Low",
+          color: "var(--chart-1)",
+        },
+        {
+          key: "food",
+          label: "Food",
+          usedKg: 0,
+          budgetKg: scores.foodScore,
+          impact: scores.foodScore > 150 ? "High" : scores.foodScore > 80 ? "Medium" : "Low",
+          color: "var(--chart-2)",
+        },
+        {
+          key: "energy",
+          label: "Energy",
+          usedKg: 0,
+          budgetKg: scores.energyScore,
+          impact: scores.energyScore > 100 ? "High" : scores.energyScore > 50 ? "Medium" : "Low",
+          color: "var(--chart-3)",
+        },
+        {
+          key: "shopping",
+          label: "Shopping",
+          usedKg: 0,
+          budgetKg: scores.shopScore,
+          impact: scores.shopScore > 80 ? "High" : scores.shopScore > 40 ? "Medium" : "Low",
+          color: "var(--chart-4)",
+        },
+      ];
+
+      const defaultGoals = [
+        {
+          title: "Bike to work 2× this week",
+          progress: 0,
+          reward: `−${Math.round(scores.transScore * 0.15)} kg CO₂e`,
+        },
+        { title: "Skip one food delivery", progress: 0, reward: "−3 kg CO₂e" },
+        { title: "Plant-based dinners ×4", progress: 0, reward: "−6 kg CO₂e" },
+      ];
+
+      // Update locally
+      setCarbonProfileState(updatedProfile);
+      setCategoriesState(newCategories);
+      setWeeklyGoalsState(defaultGoals);
+      setRecentActivityState([]);
+
+      localStorage.setItem("cc_profile", JSON.stringify(updatedProfile));
+      localStorage.setItem("cc_categories", JSON.stringify(newCategories));
+      localStorage.setItem("cc_goals", JSON.stringify(defaultGoals));
+      localStorage.setItem("cc_activities", JSON.stringify([]));
+
+      // Update in Firebase if logged in
+      if (user) {
+        try {
+          await setDoc(
+            doc(db, "carbon_profiles", user.uid),
+            {
+              commute_mode: answers.commute,
+              weekly_distance: answers.distance,
+              diet: answers.diet,
+              household_size: answers.household,
+              shopping_frequency: answers.shopping,
+              wfh_days: answers.wfh,
+              transportation_score: scores.transScore,
+              food_score: scores.foodScore,
+              energy_score: scores.energyScore,
+              shopping_score: scores.shopScore,
+            },
+            { merge: true },
+          );
+
+          await setDoc(
+            doc(db, "carbon_budgets", user.uid),
+            {
+              monthly_budget: scores.monthlyBudget,
+              current_usage: 0,
+              remaining_budget: scores.monthlyBudget,
+            },
+            { merge: true },
+          );
+
+          // Clean out existing goals and activities
+          const batch = writeBatch(db);
+          const goalsQuery = query(collection(db, "goals"), where("user_id", "==", user.uid));
+          const goalsSnapshot = await getDocs(goalsQuery);
+          goalsSnapshot.forEach((docSnap) => batch.delete(docSnap.ref));
+
+          const activitiesQuery = query(
+            collection(db, "activities"),
+            where("user_id", "==", user.uid),
+          );
+          const activitiesSnapshot = await getDocs(activitiesQuery);
+          activitiesSnapshot.forEach((docSnap) => batch.delete(docSnap.ref));
+          await batch.commit();
+
+          const insertBatch = writeBatch(db);
+          defaultGoals.forEach((g) => {
+            const newGoalRef = doc(collection(db, "goals"));
+            insertBatch.set(newGoalRef, {
+              user_id: user.uid,
+              title: g.title,
+              progress: g.progress,
+              reward: g.reward,
+              completed: false,
+            });
+          });
+          await insertBatch.commit();
+
+          toast.success("Carbon Profile saved and synced with cloud!");
+        } catch (err) {
+          console.error("Firebase onboarding sync failed", err);
+          toast.warning("Profile saved locally (Offline mode)");
+        }
+      } else {
+        toast.success("Carbon Profile saved locally! Sign in to sync to cloud.");
       }
-    }
-  };
+    },
+    [profile, carbonProfileState, user],
+  );
 
-  const refreshData = async () => {
+  const logNewActivity = useCallback(
+    async (label: string, category: string, kg: number) => {
+      const newActivity: Activity = {
+        id: Date.now(),
+        label,
+        category,
+        kg,
+        when: "Just now",
+      };
+
+      const updatedActivities = [newActivity, ...recentActivityState];
+      setRecentActivityState(updatedActivities);
+      localStorage.setItem("cc_activities", JSON.stringify(updatedActivities));
+
+      // Update categories usage
+      const updatedCategories = categoriesState.map((cat) => {
+        if (cat.key === category) {
+          const newUsed = Number((cat.usedKg + kg).toFixed(1));
+          return { ...cat, usedKg: newUsed };
+        }
+        return cat;
+      });
+      setCategoriesState(updatedCategories);
+      localStorage.setItem("cc_categories", JSON.stringify(updatedCategories));
+
+      // Update profile budget
+      const newUsedKg = Number((carbonProfileState.usedKg + kg).toFixed(1));
+      const updatedProfile = {
+        ...carbonProfileState,
+        usedKg: newUsedKg,
+        remainingKg: Math.max(
+          0,
+          Number((carbonProfileState.monthlyBudgetKg - newUsedKg).toFixed(1)),
+        ),
+      };
+      setCarbonProfileState(updatedProfile);
+      localStorage.setItem("cc_profile", JSON.stringify(updatedProfile));
+
+      if (user) {
+        try {
+          const newActivityRef = doc(collection(db, "activities"));
+          await setDoc(newActivityRef, {
+            user_id: user.uid,
+            label,
+            category,
+            kg,
+            created_at: new Date().toISOString(),
+          });
+
+          await setDoc(
+            doc(db, "carbon_budgets", user.uid),
+            {
+              current_usage: newUsedKg,
+              remaining_budget: updatedProfile.remainingKg,
+            },
+            { merge: true },
+          );
+
+          toast.success("Activity logged to cloud!");
+        } catch (err) {
+          console.error("Failed to log activity to Firebase", err);
+          toast.warning("Activity saved locally (Offline)");
+        }
+      } else {
+        toast.success("Activity logged locally!");
+      }
+    },
+    [recentActivityState, categoriesState, carbonProfileState, user],
+  );
+
+  const updateGoalProgress = useCallback(
+    async (title: string, progress: number) => {
+      const updatedGoals = weeklyGoalsState.map((g) => {
+        if (g.title === title) {
+          return { ...g, progress, completed: progress >= 100 };
+        }
+        return g;
+      });
+
+      setWeeklyGoalsState(updatedGoals);
+      localStorage.setItem("cc_goals", JSON.stringify(updatedGoals));
+
+      if (user) {
+        try {
+          const goalQ = query(
+            collection(db, "goals"),
+            where("user_id", "==", user.uid),
+            where("title", "==", title),
+          );
+          const goalSnap = await getDocs(goalQ);
+          if (!goalSnap.empty) {
+            await setDoc(
+              goalSnap.docs[0].ref,
+              { progress, completed: progress >= 100 },
+              { merge: true },
+            );
+          }
+        } catch (err) {
+          console.error("Failed to sync goal to Firebase", err);
+        }
+      }
+    },
+    [weeklyGoalsState, user],
+  );
+
+  const refreshData = useCallback(async () => {
     if (user) {
       await loadUserData(user);
     }
-  };
+  }, [user, loadUserData]);
 
-  const signOutUser = async () => {
+  const signOutUser = useCallback(async () => {
     await auth.signOut();
     setUser(null);
     setProfile(null);
@@ -591,29 +633,42 @@ export const CarbonDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     localStorage.removeItem("cc_goals");
     localStorage.removeItem("cc_activities");
     toast.success("Logged out successfully");
-  };
+  }, []);
 
-  return (
-    <CarbonDataContext.Provider
-      value={{
-        user,
-        loading,
-        profile,
-        carbonProfile: carbonProfileState,
-        categories: categoriesState,
-        weeklyGoals: weeklyGoalsState,
-        recentActivity: recentActivityState,
-        monthlyTrend: monthlyTrendState,
-        saveOnboarding,
-        logNewActivity,
-        updateGoalProgress,
-        refreshData,
-        signOutUser,
-      }}
-    >
-      {children}
-    </CarbonDataContext.Provider>
+  const providerValue = useMemo(
+    () => ({
+      user,
+      loading,
+      profile,
+      carbonProfile: carbonProfileState,
+      categories: categoriesState,
+      weeklyGoals: weeklyGoalsState,
+      recentActivity: recentActivityState,
+      monthlyTrend: monthlyTrendState,
+      saveOnboarding,
+      logNewActivity,
+      updateGoalProgress,
+      refreshData,
+      signOutUser,
+    }),
+    [
+      user,
+      loading,
+      profile,
+      carbonProfileState,
+      categoriesState,
+      weeklyGoalsState,
+      recentActivityState,
+      monthlyTrendState,
+      saveOnboarding,
+      logNewActivity,
+      updateGoalProgress,
+      refreshData,
+      signOutUser,
+    ],
   );
+
+  return <CarbonDataContext.Provider value={providerValue}>{children}</CarbonDataContext.Provider>;
 };
 
 export const useCarbonData = () => {

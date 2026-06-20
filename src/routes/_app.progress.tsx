@@ -101,11 +101,11 @@ function Progress() {
 
         <section className="col-span-12 lg:col-span-8 rounded-3xl bg-card border border-border ring-soft p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-display text-lg font-semibold">Monthly footprint</h3>
+            <h2 className="font-display text-lg font-semibold">Monthly footprint</h2>
             <span className="text-xs text-muted-foreground">kg CO₂e per month</span>
           </div>
           <div className="h-64 -mx-2">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" role="img" aria-label="Monthly carbon footprint bar chart">
               <BarChart data={monthlyTrend}>
                 <CartesianGrid
                   stroke="var(--color-border)"
@@ -140,7 +140,7 @@ function Progress() {
           }}
         >
           <TreePine className="h-6 w-6" aria-hidden="true" />
-          <h3 className="mt-3 font-display text-2xl font-semibold leading-tight">
+          <h2 className="mt-3 font-display text-2xl font-semibold leading-tight">
             You're outpacing {benchmarkPercentage}% of users in {userCity}
           </h3>
           <p className="mt-2 text-sm opacity-90">
@@ -163,7 +163,7 @@ function Progress() {
 
         <section className="col-span-12 rounded-3xl bg-card border border-border ring-soft p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-display text-lg font-semibold">Achievements</h3>
+            <h2 className="font-display text-lg font-semibold">Achievements</h2>
             <Award className="h-4 w-4 text-muted-foreground" />
           </div>
           <ul className="grid grid-cols-2 sm:grid-cols-4 gap-3">

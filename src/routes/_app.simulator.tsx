@@ -153,7 +153,8 @@ function Simulator() {
 
         <aside className="col-span-12 lg:col-span-5 space-y-4">
           <div
-            className={`rounded-3xl p-6 ring-lift border ${better ? "border-success/30" : "border-destructive/30"} relative overflow-hidden`}
+            aria-live="polite"
+            className={`rounded-3xl p-6 ring-lift border ${better ? "border-success/30" : "border-destructive/30"} relative overflow-hidden transition-simulator`}
             style={{
               background: better
                 ? "linear-gradient(135deg, color-mix(in oklab, var(--color-success) 12%, var(--color-card)), var(--color-card))"
@@ -164,7 +165,8 @@ function Simulator() {
               Projected change
             </div>
             <div
-              className={`mt-2 font-display text-5xl font-semibold tabular-nums ${better ? "text-success" : "text-destructive"}`}
+              key={monthlyDelta.toFixed(1)}
+              className={`mt-2 font-display text-5xl font-semibold tabular-nums animate-pulse-highlight origin-left ${better ? "text-success" : "text-destructive"}`}
             >
               {monthlyDelta >= 0 ? "+" : ""}
               {monthlyDelta.toFixed(1)}
@@ -195,7 +197,7 @@ function Simulator() {
           <div className="rounded-3xl bg-card border border-border ring-soft p-6">
             <div className="flex items-center gap-2">
               <Lightbulb className="h-4 w-4 text-warning" />
-              <h3 className="font-semibold text-sm">Try this combo</h3>
+              <h2 className="font-semibold text-sm">Try this combo</h2>
             </div>
             <p className="mt-2 text-sm text-muted-foreground">
               Subway 3×/week + 1 fewer delivery + 1 extra WFH day saves an estimated{" "}

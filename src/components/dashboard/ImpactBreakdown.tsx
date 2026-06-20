@@ -3,11 +3,17 @@ import { CategoryData } from "@/hooks/use-carbon-data";
 
 type ImpactBreakdownProps = {
   categories: CategoryData[];
+  className?: string;
 };
 
-export function ImpactBreakdown({ categories }: ImpactBreakdownProps) {
+export const ImpactBreakdown = React.memo(function ImpactBreakdown({
+  categories,
+  className,
+}: ImpactBreakdownProps) {
   return (
-    <section className="col-span-12 lg:col-span-7 rounded-3xl bg-card border border-border ring-soft p-6">
+    <section
+      className={`col-span-12 lg:col-span-7 rounded-3xl bg-card border border-border ring-soft p-6 ${className || ""}`}
+    >
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-display text-lg font-semibold">Impact breakdown</h3>
         <span className="text-xs text-muted-foreground">this month</span>
@@ -60,4 +66,4 @@ export function ImpactBreakdown({ categories }: ImpactBreakdownProps) {
       </ul>
     </section>
   );
-}
+});

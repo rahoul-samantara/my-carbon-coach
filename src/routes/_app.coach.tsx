@@ -71,23 +71,23 @@ function Coach() {
   const [isTyping, setIsTyping] = useState(false);
   const [isListening, setIsListening] = useState(false);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const recognitionRef = useRef<any>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
 
   useEffect(() => {
     // Setup Web Speech API for Speech Recognition
     if (typeof window !== "undefined") {
-      const SpeechRecognition =
-        (window as unknown as Record<string, unknown>).SpeechRecognition ||
-        (window as unknown as Record<string, unknown>).webkitSpeechRecognition;
-      if (SpeechRecognition) {
-        recognitionRef.current = new (SpeechRecognition as any)();
+      const SpeechRecognitionConstructor =
+        (window as unknown as { SpeechRecognition: new () => SpeechRecognition })
+          .SpeechRecognition ||
+        (window as unknown as { webkitSpeechRecognition: new () => SpeechRecognition })
+          .webkitSpeechRecognition;
+      if (SpeechRecognitionConstructor) {
+        recognitionRef.current = new SpeechRecognitionConstructor();
         recognitionRef.current.continuous = false;
         recognitionRef.current.interimResults = true;
         recognitionRef.current.lang = "en-US";
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        recognitionRef.current.onresult = (event: any) => {
+        recognitionRef.current.onresult = (event: SpeechRecognitionEvent) => {
           let transcript = "";
           for (let i = event.resultIndex; i < event.results.length; i++) {
             transcript += event.results[i][0].transcript;
@@ -95,8 +95,7 @@ function Coach() {
           setInput(transcript);
         };
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        recognitionRef.current.onerror = (event: any) => {
+        recognitionRef.current.onerror = (event: SpeechRecognitionErrorEvent) => {
           console.error("Speech recognition error", event.error);
           setIsListening(false);
         };
@@ -203,7 +202,7 @@ function Coach() {
             <div className="ml-auto flex items-center">
               <button
                 onClick={() => speakText("Voice synthesis is active")}
-                title="Test Speech"
+                aria-label="Test Speech"
                 className="grid h-8 w-8 place-items-center rounded-full hover:bg-muted text-muted-foreground"
               >
                 <Volume2 className="h-4 w-4" />
@@ -280,9 +279,15 @@ function Coach() {
             ))}
             {isTyping && (
               <div className="flex justify-start">
-                <div className="flex items-center gap-2 text-muted-foreground text-sm bg-accent/30 px-4 py-2.5 rounded-2xl">
-                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                  Analyzing footprint...
+                <div className="flex items-center gap-3 bg-muted/40 border border-border px-4 py-3 rounded-2xl animate-pulse">
+                  <div className="flex gap-1 items-center" aria-label="Typing indicator">
+                    <span className="w-2 h-2 rounded-full bg-primary animate-bounce [animation-delay:-0.3s]" />
+                    <span className="w-2 h-2 rounded-full bg-primary animate-bounce [animation-delay:-0.15s]" />
+                    <span className="w-2 h-2 rounded-full bg-primary animate-bounce" />
+                  </div>
+                  <span className="text-xs text-muted-foreground font-medium">
+                    Coach is thinking...
+                  </span>
                 </div>
               </div>
             )}
@@ -306,7 +311,7 @@ function Coach() {
                   ? "bg-destructive text-destructive-foreground animate-pulse"
                   : "bg-muted text-muted-foreground hover:bg-muted/80"
               }`}
-              title="Use Voice (Speech to Text)"
+              aria-label="Use Voice (Speech to Text)"
             >
               <Mic className="h-4 w-4" />
             </button>
@@ -331,7 +336,7 @@ function Coach() {
 
         <aside className="col-span-12 lg:col-span-4 space-y-4">
           <div className="rounded-3xl bg-card border border-border ring-soft p-6">
-            <h3 className="font-display text-lg font-semibold">Suggested questions</h3>
+            <h2 className="font-display text-lg font-semibold">Suggested questions</h2>
             <ul className="mt-3 space-y-2">
               {suggestedQuestions.map((q) => (
                 <li key={q}>
@@ -354,7 +359,7 @@ function Coach() {
             }}
           >
             <Sparkles className="h-5 w-5" />
-            <h3 className="mt-3 font-display text-xl font-semibold">Insight of the day</h3>
+            <h2 className="mt-3 font-display text-xl font-semibold">Insight of the day</h2>
             <p className="mt-2 text-sm opacity-95">
               Swapping just 30% of your weekly car trips to subway could save 380 kg CO₂e per year —
               equivalent to planting 6 mature trees.

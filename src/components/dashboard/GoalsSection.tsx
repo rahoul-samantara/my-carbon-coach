@@ -5,11 +5,17 @@ import { Goal } from "@/hooks/use-carbon-data";
 
 type GoalsSectionProps = {
   goals: Goal[];
+  className?: string;
 };
 
-export function GoalsSection({ goals }: GoalsSectionProps) {
+export const GoalsSection = React.memo(function GoalsSection({
+  goals,
+  className,
+}: GoalsSectionProps) {
   return (
-    <section className="col-span-12 lg:col-span-5 rounded-3xl bg-card border border-border ring-soft p-6">
+    <section
+      className={`col-span-12 lg:col-span-5 rounded-3xl bg-card border border-border ring-soft p-6 ${className || ""}`}
+    >
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-display text-lg font-semibold">Weekly goals</h3>
         <Link
@@ -52,4 +58,4 @@ export function GoalsSection({ goals }: GoalsSectionProps) {
       </ul>
     </section>
   );
-}
+});

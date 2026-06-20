@@ -9,6 +9,8 @@ import { ImpactBreakdown } from "@/components/dashboard/ImpactBreakdown";
 import { GoalsSection } from "@/components/dashboard/GoalsSection";
 import { RecentActivities } from "@/components/dashboard/RecentActivities";
 
+import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
+
 export const Route = createFileRoute("/_app/")({
   head: () => ({
     meta: [
@@ -31,13 +33,28 @@ const PRESETS = [
   { label: "Ran washer (hot water)", category: "energy", kg: 1.5 },
 ];
 
-function Dashboard() {
-  const { carbonProfile, categories, monthlyTrend, weeklyGoals, recentActivity, logNewActivity } =
-    useCarbonData();
+export function Dashboard() {
+  const {
+    carbonProfile,
+    categories,
+    monthlyTrend,
+    weeklyGoals,
+    recentActivity,
+    logNewActivity,
+    loading,
+  } = useCarbonData();
   const [showLogModal, setShowLogModal] = useState(false);
   const [logLabel, setLogLabel] = useState("");
   const [logCategory, setLogCategory] = useState("transport");
   const [logKg, setLogKg] = useState("");
+
+  if (loading) {
+    return (
+      <AppShell title="Good morning..." subtitle="Loading your carbon budget...">
+        <DashboardSkeleton />
+      </AppShell>
+    );
+  }
 
   const { monthlyBudgetKg, usedKg, remainingKg } = carbonProfile;
   const pct = monthlyBudgetKg > 0 ? Math.round((usedKg / monthlyBudgetKg) * 100) : 0;
@@ -75,16 +92,17 @@ function Dashboard() {
           dash={dash}
           circumference={circumference}
           onLogClick={() => setShowLogModal(true)}
+          className="animate-card-fade-in stagger-1"
         />
 
         {/* Trend chart */}
-        <section className="col-span-12 lg:col-span-4 rounded-3xl bg-card border border-border ring-soft p-6">
+        <section className="col-span-12 lg:col-span-4 rounded-3xl bg-card border border-border ring-soft p-6 animate-card-fade-in stagger-2">
           <div className="flex items-center justify-between">
-            <h3 className="font-display text-lg font-semibold">6-month trend</h3>
+            <h2 className="font-display text-lg font-semibold">6-month trend</h2>
             <span className="text-xs text-muted-foreground">kg CO₂e</span>
           </div>
           <div className="mt-4 h-44 -mx-2">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" role="img" aria-label="Area chart showing monthly carbon emission trends against goals.">
               <AreaChart data={monthlyTrend}>
                 <defs>
                   <linearGradient id="trend" x1="0" y1="0" x2="0" y2="1">
@@ -127,9 +145,13 @@ function Dashboard() {
           </div>
         </section>
 
-        <ImpactBreakdown categories={categories} />
-        <GoalsSection goals={weeklyGoals} />
-        <RecentActivities recentActivity={recentActivity} categories={categories} />
+        <ImpactBreakdown categories={categories} className="animate-card-fade-in stagger-3" />
+        <GoalsSection goals={weeklyGoals} className="animate-card-fade-in stagger-4" />
+        <RecentActivities
+          recentActivity={recentActivity}
+          categories={categories}
+          className="animate-card-fade-in stagger-5"
+        />
       </div>
 
       {/* Log Activity Modal */}

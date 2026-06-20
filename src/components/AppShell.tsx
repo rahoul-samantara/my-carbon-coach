@@ -42,7 +42,7 @@ export function AppShell({
   const navigate = useNavigate();
   const { carbonProfile, user, signOutUser } = useCarbonData();
 
-  const userDisplayName = (user as any)?.displayName || carbonProfile.name;
+  const userDisplayName = user?.displayName || carbonProfile.name;
   const userInitials =
     userDisplayName
       .split(" ")
@@ -53,6 +53,7 @@ export function AppShell({
 
   return (
     <div className="min-h-dvh surface-gradient">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-background focus:text-foreground">Skip to main content</a>
       <div className="mx-auto flex max-w-[1440px] gap-0 lg:gap-6 lg:p-6">
         {/* Sidebar */}
         <aside className="hidden lg:flex w-60 shrink-0 flex-col rounded-3xl bg-sidebar p-5 ring-soft border border-sidebar-border h-[calc(100dvh-3rem)] sticky top-6">
@@ -97,7 +98,7 @@ export function AppShell({
         </aside>
 
         {/* Main */}
-        <main className="flex-1 min-w-0 px-4 py-6 lg:p-0">
+        <main id="main-content" className="flex-1 min-w-0 px-4 py-6 lg:p-0">
           {/* Mobile top bar */}
           <div className="lg:hidden mb-4 flex items-center justify-between">
             <Logo />
@@ -150,12 +151,7 @@ export function AppShell({
                   <ShieldAlert className="h-3.5 w-3.5" /> Offline Mode (Local Storage)
                 </div>
               )}
-              <button
-                aria-label="Notifications"
-                className="grid h-10 w-10 place-items-center rounded-full border border-border bg-card hover:bg-accent transition"
-              >
-                <Bell className="h-4 w-4" />
-              </button>
+
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -199,7 +195,9 @@ export function AppShell({
             </div>
           </header>
 
-          {children}
+          <div key={pathname} className="animate-page-enter">
+            {children}
+          </div>
 
           {/* Mobile bottom nav */}
           <nav

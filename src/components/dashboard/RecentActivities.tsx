@@ -4,11 +4,18 @@ import { Activity, CategoryData } from "@/hooks/use-carbon-data";
 type RecentActivitiesProps = {
   recentActivity: Activity[];
   categories: CategoryData[];
+  className?: string;
 };
 
-export function RecentActivities({ recentActivity, categories }: RecentActivitiesProps) {
+export const RecentActivities = React.memo(function RecentActivities({
+  recentActivity,
+  categories,
+  className,
+}: RecentActivitiesProps) {
   return (
-    <section className="col-span-12 rounded-3xl bg-card border border-border ring-soft p-6">
+    <section
+      className={`col-span-12 rounded-3xl bg-card border border-border ring-soft p-6 ${className || ""}`}
+    >
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-display text-lg font-semibold">Recent activity</h3>
         <span className="text-xs text-muted-foreground">Historical records</span>
@@ -47,4 +54,4 @@ export function RecentActivities({ recentActivity, categories }: RecentActivitie
       </ul>
     </section>
   );
-}
+});

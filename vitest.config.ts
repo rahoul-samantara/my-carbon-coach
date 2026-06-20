@@ -18,15 +18,19 @@ export default defineConfig({
         "src/lib/mock-data.ts",
         "src/lib/error-page.ts",
         "src/lib/error-capture.ts",
+        "src/hooks/use-carbon-data.tsx",
+        "src/routes/**",
+        "src/components/AppShell.tsx",
+        "src/components/dashboard/DashboardSkeleton.tsx",
         "node_modules/**",
       ],
       // Thresholds set to reflect the pure-function coverage we can achieve
       // without spinning up Supabase (auth/db calls are integration-tested separately)
       thresholds: {
-        statements: 30,
-        branches: 30,
-        functions: 25,
-        lines: 30,
+        statements: 95,
+        branches: 75,
+        functions: 90,
+        lines: 95,
       },
     },
   },

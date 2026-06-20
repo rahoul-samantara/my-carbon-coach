@@ -11,9 +11,10 @@ type BudgetHeroProps = {
   dash: number;
   circumference: number;
   onLogClick: () => void;
+  className?: string;
 };
 
-export function BudgetHero({
+export const BudgetHero = React.memo(function BudgetHero({
   name,
   monthlyBudgetKg,
   usedKg,
@@ -22,9 +23,12 @@ export function BudgetHero({
   dash,
   circumference,
   onLogClick,
+  className,
 }: BudgetHeroProps) {
   return (
-    <section className="col-span-12 lg:col-span-8 rounded-3xl bg-card border border-border ring-soft p-6 sm:p-8 relative overflow-hidden">
+    <section
+      className={`col-span-12 lg:col-span-8 rounded-3xl bg-card border border-border ring-soft p-6 sm:p-8 relative overflow-hidden ${className || ""}`}
+    >
       <div
         className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-leaf/15 blur-3xl"
         aria-hidden="true"
@@ -102,4 +106,4 @@ export function BudgetHero({
       </div>
     </section>
   );
-}
+});
