@@ -81,7 +81,7 @@ function Coach() {
         (window as unknown as Record<string, unknown>).SpeechRecognition ||
         (window as unknown as Record<string, unknown>).webkitSpeechRecognition;
       if (SpeechRecognition) {
-        recognitionRef.current = new SpeechRecognition();
+        recognitionRef.current = new (SpeechRecognition as any)();
         recognitionRef.current.continuous = false;
         recognitionRef.current.interimResults = true;
         recognitionRef.current.lang = "en-US";

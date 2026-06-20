@@ -42,7 +42,7 @@ export function AppShell({
   const navigate = useNavigate();
   const { carbonProfile, user, signOutUser } = useCarbonData();
 
-  const userDisplayName = user?.user_metadata?.full_name || carbonProfile.name;
+  const userDisplayName = (user as any)?.displayName || carbonProfile.name;
   const userInitials =
     userDisplayName
       .split(" ")

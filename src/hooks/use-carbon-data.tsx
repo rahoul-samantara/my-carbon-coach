@@ -15,6 +15,8 @@ import {
 } from "firebase/firestore";
 import { User } from "firebase/auth";
 import { toast } from "sonner";
+import { supabase as _supabase } from "@/integrations/supabase/client";
+const supabase = _supabase as any;
 
 import { OnboardingAnswers, calculateBudget } from "@/lib/carbon-utils";
 
@@ -221,7 +223,7 @@ export const CarbonDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       // 4. Load Activities
       const actQuery = query(collection(db, "activities"), where("user_id", "==", currentUser.uid));
       const actDocs = await getDocs(actQuery);
-      const activities = actDocs.docs.map((d) => ({ id: d.id, ...d.data() }));
+      const activities: any[] = actDocs.docs.map((d) => ({ id: d.id, ...d.data() }));
       activities.sort(
         (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
       );
@@ -229,7 +231,7 @@ export const CarbonDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       // 5. Load Goals
       const goalsQuery = query(collection(db, "goals"), where("user_id", "==", currentUser.uid));
       const goalsDocs = await getDocs(goalsQuery);
-      const goals = goalsDocs.docs.map((d) => ({ id: d.id, ...d.data() }));
+      const goals: any[] = goalsDocs.docs.map((d) => ({ id: d.id, ...d.data() }));
 
       if (carbProf && carbBudget) {
         const answers: OnboardingAnswers = {
@@ -248,8 +250,8 @@ export const CarbonDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           monthlyBudgetKg: budget,
           usedKg: used,
           remainingKg: Math.max(0, budget - used),
-          name: profileData?.name || currentUser.user_metadata?.full_name || "Eco User",
-          city: profileData?.city || currentUser.user_metadata?.city || "Brooklyn, NY",
+          name: profileData?.name || (currentUser as any).user_metadata?.full_name || "Eco User",
+          city: profileData?.city || (currentUser as any).user_metadata?.city || "Brooklyn, NY",
           joined: new Date(profileData?.created_at || Date.now()).toLocaleDateString("en-US", {
             month: "long",
             year: "numeric",
@@ -430,7 +432,7 @@ export const CarbonDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       try {
         const { error: profileUpsertErr } = await supabase.from("carbon_profiles").upsert(
           {
-            user_id: user.id,
+            user_id: (user as any).uid,
             commute_mode: answers.commute,
             weekly_distance: answers.distance,
             diet: answers.diet,
@@ -447,7 +449,7 @@ export const CarbonDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
         const { error: budgetUpsertErr } = await supabase.from("carbon_budgets").upsert(
           {
-            user_id: user.id,
+            user_id: (user as any).uid,
             monthly_budget: scores.monthlyBudget,
             current_usage: 0,
             remaining_budget: scores.monthlyBudget,
@@ -456,12 +458,12 @@ export const CarbonDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         );
 
         // Clean out existing goals and insert new ones
-        await supabase.from("goals").delete().eq("user_id", user.id);
-        await supabase.from("activities").delete().eq("user_id", user.id);
+        await supabase.from("goals").delete().eq("user_id", (user as any).uid);
+        await supabase.from("activities").delete().eq("user_id", (user as any).uid);
 
         await supabase.from("goals").insert(
           defaultGoals.map((g) => ({
-            user_id: user.id,
+            user_id: (user as any).uid,
             title: g.title,
             progress: g.progress,
             reward: g.reward,
@@ -516,7 +518,7 @@ export const CarbonDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     if (user) {
       try {
         await supabase.from("activities").insert({
-          user_id: user.id,
+          user_id: (user as any).uid,
           label,
           category,
           kg,
@@ -528,7 +530,7 @@ export const CarbonDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             current_usage: newUsedKg,
             remaining_budget: updatedProfile.remainingKg,
           })
-          .eq("user_id", user.id);
+          .eq("user_id", (user as any).uid);
 
         toast.success("Activity logged to cloud!");
       } catch (err) {
@@ -556,7 +558,7 @@ export const CarbonDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         await supabase
           .from("goals")
           .update({ progress, completed: progress >= 100 })
-          .eq("user_id", user.id)
+          .eq("user_id", (user as any).uid)
           .eq("title", title);
       } catch (err) {
         console.error("Failed to sync goal to Supabase", err);

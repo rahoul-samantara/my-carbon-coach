@@ -167,7 +167,7 @@ export const askCoach = createServerFn({ method: "POST" })
             isAuthenticated = true;
             userId = token.replace("mock-token-", "");
           } else {
-            const decodedToken = await firebaseAdmin.auth().verifyIdToken(token);
+            const decodedToken = await (firebaseAdmin as any).auth().verifyIdToken(token);
             if (decodedToken && decodedToken.uid) {
               isAuthenticated = true;
               userId = decodedToken.uid;
