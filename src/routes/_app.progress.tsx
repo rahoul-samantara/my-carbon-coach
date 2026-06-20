@@ -19,26 +19,60 @@ function Progress() {
   const savedCarbon = Math.max(0, monthlyBudgetKg - usedKg);
   const treesEquivalent = (savedCarbon / 22).toFixed(1);
   const budgetAdherence = usedKg <= monthlyBudgetKg ? "100%" : "0%";
-  const activeStreak = recentActivity.length > 0 ? Math.min(12, Math.ceil(recentActivity.length / 2) + 2).toString() : "0";
+  const activeStreak =
+    recentActivity.length > 0
+      ? Math.min(12, Math.ceil(recentActivity.length / 2) + 2).toString()
+      : "0";
 
   // Dynamic benchmarking metrics
   const userCity = carbonProfile.city ? carbonProfile.city.split(",")[0] : "NYC";
-  const benchmarkPercentage = Math.max(50, Math.min(99, Math.round(98 - (usedKg / (monthlyBudgetKg || 580)) * 40)));
+  const benchmarkPercentage = Math.max(
+    50,
+    Math.min(99, Math.round(98 - (usedKg / (monthlyBudgetKg || 580)) * 40)),
+  );
   const currentDayOfMonth = Math.min(30, Math.max(1, new Date().getDate()));
   const daysRemaining = 30 - currentDayOfMonth;
 
   const stats = [
-    { label: "Carbon saved", value: savedCarbon.toString(), unit: "kg CO₂e", sub: "this month vs budget", tone: "leaf" },
-    { label: "Budget adherence", value: budgetAdherence, unit: "", sub: "Current month status", tone: "primary" },
-    { label: "Weekly streak", value: activeStreak, unit: "weeks", sub: "Personal best!", tone: "warning" },
-    { label: "Trees equivalent", value: treesEquivalent, unit: "trees", sub: "absorbed CO₂", tone: "moss" },
+    {
+      label: "Carbon saved",
+      value: savedCarbon.toString(),
+      unit: "kg CO₂e",
+      sub: "this month vs budget",
+      tone: "leaf",
+    },
+    {
+      label: "Budget adherence",
+      value: budgetAdherence,
+      unit: "",
+      sub: "Current month status",
+      tone: "primary",
+    },
+    {
+      label: "Weekly streak",
+      value: activeStreak,
+      unit: "weeks",
+      sub: "Personal best!",
+      tone: "warning",
+    },
+    {
+      label: "Trees equivalent",
+      value: treesEquivalent,
+      unit: "trees",
+      sub: "absorbed CO₂",
+      tone: "moss",
+    },
   ];
 
   // Dynamic Achievements
   const hasLog = recentActivity.length > 0;
   const isUnder = usedKg < monthlyBudgetKg;
-  const foodCount = recentActivity.filter(a => a.category === "food" && (a.label.toLowerCase().includes("veg") || a.label.toLowerCase().includes("plant"))).length;
-  const goalsCompletedCount = weeklyGoals.filter(g => g.progress >= 100).length;
+  const foodCount = recentActivity.filter(
+    (a) =>
+      a.category === "food" &&
+      (a.label.toLowerCase().includes("veg") || a.label.toLowerCase().includes("plant")),
+  ).length;
+  const goalsCompletedCount = weeklyGoals.filter((g) => g.progress >= 100).length;
 
   const achievements = [
     { title: "First Week Logged", earned: hasLog, icon: "Sparkles" },
@@ -55,7 +89,10 @@ function Progress() {
             <div key={s.label} className="rounded-3xl bg-card border border-border ring-soft p-5">
               <div className="text-xs text-muted-foreground">{s.label}</div>
               <div className="mt-2 font-display text-3xl font-semibold tabular-nums">
-                {s.value}<span className="text-sm font-sans font-normal text-muted-foreground ml-1">{s.unit}</span>
+                {s.value}
+                <span className="text-sm font-sans font-normal text-muted-foreground ml-1">
+                  {s.unit}
+                </span>
               </div>
               <div className="mt-1 text-xs text-success font-medium">{s.sub}</div>
             </div>
@@ -70,10 +107,24 @@ function Progress() {
           <div className="h-64 -mx-2">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={monthlyTrend}>
-                <CartesianGrid stroke="var(--color-border)" vertical={false} strokeDasharray="3 3" />
-                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "var(--color-muted-foreground)" }} />
+                <CartesianGrid
+                  stroke="var(--color-border)"
+                  vertical={false}
+                  strokeDasharray="3 3"
+                />
+                <XAxis
+                  dataKey="month"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 11, fill: "var(--color-muted-foreground)" }}
+                />
                 <Tooltip
-                  contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: 12, fontSize: 12 }}
+                  contentStyle={{
+                    background: "var(--color-card)",
+                    border: "1px solid var(--color-border)",
+                    borderRadius: 12,
+                    fontSize: 12,
+                  }}
                   cursor={{ fill: "var(--color-accent)" }}
                 />
                 <Bar dataKey="kg" fill="var(--color-primary)" radius={[8, 8, 0, 0]} />
@@ -82,16 +133,29 @@ function Progress() {
           </div>
         </section>
 
-        <section className="col-span-12 lg:col-span-4 rounded-3xl p-6 text-white flex flex-col justify-between"
-                 style={{ background: "linear-gradient(160deg, var(--color-primary) 0%, var(--color-moss) 100%)" }}>
+        <section
+          className="col-span-12 lg:col-span-4 rounded-3xl p-6 text-white flex flex-col justify-between"
+          style={{
+            background: "linear-gradient(160deg, var(--color-primary) 0%, var(--color-moss) 100%)",
+          }}
+        >
           <TreePine className="h-6 w-6" aria-hidden="true" />
-          <h3 className="mt-3 font-display text-2xl font-semibold leading-tight">You're outpacing {benchmarkPercentage}% of users in {userCity}</h3>
+          <h3 className="mt-3 font-display text-2xl font-semibold leading-tight">
+            You're outpacing {benchmarkPercentage}% of users in {userCity}
+          </h3>
           <p className="mt-2 text-sm opacity-90">
-            {daysRemaining > 0 
-              ? `Keep your weekly streak alive — ${daysRemaining} days remaining in this budget cycle.` 
+            {daysRemaining > 0
+              ? `Keep your weekly streak alive — ${daysRemaining} days remaining in this budget cycle.`
               : "End of active budget cycle. Keep it up!"}
           </p>
-          <div className="mt-6 h-2 rounded-full bg-white/20 overflow-hidden" role="progressbar" aria-valuenow={benchmarkPercentage} aria-valuemin={0} aria-valuemax={100} aria-label="City outpacing benchmark progress">
+          <div
+            className="mt-6 h-2 rounded-full bg-white/20 overflow-hidden"
+            role="progressbar"
+            aria-valuenow={benchmarkPercentage}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label="City outpacing benchmark progress"
+          >
             <div className="h-full bg-white" style={{ width: `${benchmarkPercentage}%` }} />
           </div>
           <div className="mt-2 text-xs opacity-90">Day {currentDayOfMonth} of 30</div>
@@ -106,12 +170,19 @@ function Progress() {
             {achievements.map((a) => {
               const Icon = iconMap[a.icon as keyof typeof iconMap] || Sparkles;
               return (
-                <li key={a.title} className={`rounded-2xl border p-4 ${a.earned ? "bg-accent/40 border-border" : "border-dashed border-border opacity-60"}`}>
-                  <span className={`grid h-10 w-10 place-items-center rounded-xl ${a.earned ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
+                <li
+                  key={a.title}
+                  className={`rounded-2xl border p-4 ${a.earned ? "bg-accent/40 border-border" : "border-dashed border-border opacity-60"}`}
+                >
+                  <span
+                    className={`grid h-10 w-10 place-items-center rounded-xl ${a.earned ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
+                  >
                     <Icon className="h-4 w-4" />
                   </span>
                   <div className="mt-3 font-semibold text-sm">{a.title}</div>
-                  <div className="text-xs text-muted-foreground mt-1">{a.earned ? "Earned" : "Locked"}</div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {a.earned ? "Earned" : "Locked"}
+                  </div>
                 </li>
               );
             })}
@@ -121,4 +192,3 @@ function Progress() {
     </AppShell>
   );
 }
-

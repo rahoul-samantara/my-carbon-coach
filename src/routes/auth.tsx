@@ -47,10 +47,11 @@ function AuthPage() {
         toast.success("Successfully logged in.");
         navigate({ to: "/" });
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setError(err.message || "An authentication error occurred.");
-      toast.error(err.message || "Authentication failed");
+      const message = err instanceof Error ? err.message : "An authentication error occurred.";
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -74,7 +75,10 @@ function AuthPage() {
         <div className="rounded-3xl bg-card border border-border ring-soft p-8 shadow-lg">
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="flex items-center gap-2 p-3 text-xs bg-destructive/10 text-destructive border border-destructive/20 rounded-2xl" role="alert">
+              <div
+                className="flex items-center gap-2 p-3 text-xs bg-destructive/10 text-destructive border border-destructive/20 rounded-2xl"
+                role="alert"
+              >
                 <AlertCircle className="h-4 w-4 shrink-0" />
                 <span>{error}</span>
               </div>
@@ -82,7 +86,10 @@ function AuthPage() {
 
             {isSignUp && (
               <div>
-                <label htmlFor="name-input" className="text-xs font-semibold text-muted-foreground block mb-1">
+                <label
+                  htmlFor="name-input"
+                  className="text-xs font-semibold text-muted-foreground block mb-1"
+                >
                   Full Name
                 </label>
                 <div className="relative">
@@ -103,7 +110,10 @@ function AuthPage() {
             )}
 
             <div>
-              <label htmlFor="email-input" className="text-xs font-semibold text-muted-foreground block mb-1">
+              <label
+                htmlFor="email-input"
+                className="text-xs font-semibold text-muted-foreground block mb-1"
+              >
                 Email Address
               </label>
               <div className="relative">
@@ -123,7 +133,10 @@ function AuthPage() {
             </div>
 
             <div>
-              <label htmlFor="password-input" className="text-xs font-semibold text-muted-foreground block mb-1">
+              <label
+                htmlFor="password-input"
+                className="text-xs font-semibold text-muted-foreground block mb-1"
+              >
                 Password
               </label>
               <div className="relative">

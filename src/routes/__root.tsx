@@ -78,22 +78,45 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Carbon Compass — Track and reduce your footprint" },
-      { name: "description", content: "Understand, track, and reduce your carbon footprint with a personalized budget and AI coach." },
+      {
+        name: "description",
+        content:
+          "Understand, track, and reduce your carbon footprint with a personalized budget and AI coach.",
+      },
       { name: "author", content: "Carbon Compass" },
       { property: "og:title", content: "Carbon Compass — Track and reduce your footprint" },
-      { property: "og:description", content: "Understand, track, and reduce your carbon footprint with a personalized budget and AI coach." },
+      {
+        property: "og:description",
+        content:
+          "Understand, track, and reduce your carbon footprint with a personalized budget and AI coach.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
       { name: "twitter:title", content: "Carbon Compass — Track and reduce your footprint" },
-      { name: "twitter:description", content: "Understand, track, and reduce your carbon footprint with a personalized budget and AI coach." },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/14dc5e2a-e1d9-4e0a-8d26-afbb6223f283" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/14dc5e2a-e1d9-4e0a-8d26-afbb6223f283" },
+      {
+        name: "twitter:description",
+        content:
+          "Understand, track, and reduce your carbon footprint with a personalized budget and AI coach.",
+      },
+      {
+        property: "og:image",
+        content:
+          "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/14dc5e2a-e1d9-4e0a-8d26-afbb6223f283",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/14dc5e2a-e1d9-4e0a-8d26-afbb6223f283",
+      },
     ],
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap",
+      },
       { rel: "stylesheet", href: appCss },
     ],
   }),
@@ -132,4 +155,3 @@ function RootComponent() {
     </QueryClientProvider>
   );
 }
-

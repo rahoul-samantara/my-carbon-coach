@@ -10,10 +10,38 @@ export const carbonProfile = {
 };
 
 export const categories = [
-  { key: "transport", label: "Transportation", usedKg: 198, budgetKg: 240, impact: "High", color: "var(--chart-1)" },
-  { key: "food", label: "Food", usedKg: 124, budgetKg: 160, impact: "Medium", color: "var(--chart-2)" },
-  { key: "energy", label: "Energy", usedKg: 56, budgetKg: 110, impact: "Low", color: "var(--chart-3)" },
-  { key: "shopping", label: "Shopping", usedKg: 34, budgetKg: 70, impact: "Low", color: "var(--chart-4)" },
+  {
+    key: "transport",
+    label: "Transportation",
+    usedKg: 198,
+    budgetKg: 240,
+    impact: "High",
+    color: "var(--chart-1)",
+  },
+  {
+    key: "food",
+    label: "Food",
+    usedKg: 124,
+    budgetKg: 160,
+    impact: "Medium",
+    color: "var(--chart-2)",
+  },
+  {
+    key: "energy",
+    label: "Energy",
+    usedKg: 56,
+    budgetKg: 110,
+    impact: "Low",
+    color: "var(--chart-3)",
+  },
+  {
+    key: "shopping",
+    label: "Shopping",
+    usedKg: 34,
+    budgetKg: 70,
+    impact: "Low",
+    color: "var(--chart-4)",
+  },
 ] as const;
 
 export const monthlyTrend = [

@@ -75,15 +75,17 @@ const CarbonDataContext = createContext<CarbonDataContextProps | undefined>(unde
 export const calculateBudget = (a: OnboardingAnswers) => {
   const commute = a.commute || "car";
   const dist = a.distance ?? 60;
-  const commuteMult = commute === "car" ? 0.2 : commute === "rideshare" ? 0.25 : commute === "transit" ? 0.04 : 0;
+  const commuteMult =
+    commute === "car" ? 0.2 : commute === "rideshare" ? 0.25 : commute === "transit" ? 0.04 : 0;
   const transScore = Math.round(dist * commuteMult * 4.33);
 
   const diet = a.diet || "flexitarian";
-  const foodScore = diet === "meat" ? 200 : diet === "flexitarian" ? 140 : diet === "vegetarian" ? 90 : 60;
+  const foodScore =
+    diet === "meat" ? 200 : diet === "flexitarian" ? 140 : diet === "vegetarian" ? 90 : 60;
 
   const hh = a.household ?? 2;
   const wfh = a.wfh ?? 2;
-  const energyScore = Math.round((120 / hh) + (wfh * 3));
+  const energyScore = Math.round(120 / hh + wfh * 3);
 
   const shop = a.shopping || "monthly";
   const shopScore = shop === "rare" ? 15 : shop === "monthly" ? 30 : shop === "weekly" ? 65 : 120;
@@ -108,7 +110,9 @@ const defaultTrend = [
 export const CarbonDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [profile, setProfile] = useState<{ name: string; email: string; city: string } | null>(null);
+  const [profile, setProfile] = useState<{ name: string; email: string; city: string } | null>(
+    null,
+  );
 
   // Core states
   const [carbonProfileState, setCarbonProfileState] = useState<CarbonProfile>({
@@ -118,14 +122,49 @@ export const CarbonDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     name: "Alex Rivera",
     city: "Brooklyn, NY",
     joined: "March 2026",
-    answers: { commute: "car", distance: 60, diet: "flexitarian", household: 2, shopping: "monthly", wfh: 2 }
+    answers: {
+      commute: "car",
+      distance: 60,
+      diet: "flexitarian",
+      household: 2,
+      shopping: "monthly",
+      wfh: 2,
+    },
   });
 
   const [categoriesState, setCategoriesState] = useState<CategoryData[]>([
-    { key: "transport", label: "Transportation", usedKg: 198, budgetKg: 240, impact: "High", color: "var(--chart-1)" },
-    { key: "food", label: "Food", usedKg: 124, budgetKg: 160, impact: "Medium", color: "var(--chart-2)" },
-    { key: "energy", label: "Energy", usedKg: 56, budgetKg: 110, impact: "Low", color: "var(--chart-3)" },
-    { key: "shopping", label: "Shopping", usedKg: 34, budgetKg: 70, impact: "Low", color: "var(--chart-4)" },
+    {
+      key: "transport",
+      label: "Transportation",
+      usedKg: 198,
+      budgetKg: 240,
+      impact: "High",
+      color: "var(--chart-1)",
+    },
+    {
+      key: "food",
+      label: "Food",
+      usedKg: 124,
+      budgetKg: 160,
+      impact: "Medium",
+      color: "var(--chart-2)",
+    },
+    {
+      key: "energy",
+      label: "Energy",
+      usedKg: 56,
+      budgetKg: 110,
+      impact: "Low",
+      color: "var(--chart-3)",
+    },
+    {
+      key: "shopping",
+      label: "Shopping",
+      usedKg: 34,
+      budgetKg: 70,
+      impact: "Low",
+      color: "var(--chart-4)",
+    },
   ]);
 
   const [weeklyGoalsState, setWeeklyGoalsState] = useState<Goal[]>([
@@ -167,7 +206,9 @@ export const CarbonDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   // Listen to Auth state changes
   useEffect(() => {
     const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       setUser(session?.user ?? null);
       if (session?.user) {
         await loadUserData(session.user);
@@ -178,7 +219,9 @@ export const CarbonDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
     getSession();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setUser(session?.user ?? null);
       if (session?.user) {
         await loadUserData(session.user);
@@ -207,7 +250,7 @@ export const CarbonDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         setProfile({
           name: profileData.name || currentUser.user_metadata?.full_name || "Eco User",
           email: profileData.email || currentUser.email || "",
-          city: profileData.city || currentUser.user_metadata?.city || "Brooklyn, NY"
+          city: profileData.city || currentUser.user_metadata?.city || "Brooklyn, NY",
         });
       }
 
@@ -257,8 +300,11 @@ export const CarbonDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           remainingKg: Math.max(0, budget - used),
           name: profileData?.name || currentUser.user_metadata?.full_name || "Eco User",
           city: profileData?.city || currentUser.user_metadata?.city || "Brooklyn, NY",
-          joined: new Date(profileData?.created_at || Date.now()).toLocaleDateString("en-US", { month: "long", year: "numeric" }),
-          answers
+          joined: new Date(profileData?.created_at || Date.now()).toLocaleDateString("en-US", {
+            month: "long",
+            year: "numeric",
+          }),
+          answers,
         });
 
         // Set categories based on calculated scores and current activities
@@ -276,33 +322,68 @@ export const CarbonDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         }
 
         setCategoriesState([
-          { key: "transport", label: "Transportation", usedKg: Math.round(categoryUsage.transport), budgetKg: calcs.transScore, impact: calcs.transScore > 150 ? "High" : calcs.transScore > 80 ? "Medium" : "Low", color: "var(--chart-1)" },
-          { key: "food", label: "Food", usedKg: Math.round(categoryUsage.food), budgetKg: calcs.foodScore, impact: calcs.foodScore > 150 ? "High" : calcs.foodScore > 80 ? "Medium" : "Low", color: "var(--chart-2)" },
-          { key: "energy", label: "Energy", usedKg: Math.round(categoryUsage.energy), budgetKg: calcs.energyScore, impact: calcs.energyScore > 100 ? "High" : calcs.energyScore > 50 ? "Medium" : "Low", color: "var(--chart-3)" },
-          { key: "shopping", label: "Shopping", usedKg: Math.round(categoryUsage.shopping), budgetKg: calcs.shopScore, impact: calcs.shopScore > 80 ? "High" : calcs.shopScore > 40 ? "Medium" : "Low", color: "var(--chart-4)" },
+          {
+            key: "transport",
+            label: "Transportation",
+            usedKg: Math.round(categoryUsage.transport),
+            budgetKg: calcs.transScore,
+            impact: calcs.transScore > 150 ? "High" : calcs.transScore > 80 ? "Medium" : "Low",
+            color: "var(--chart-1)",
+          },
+          {
+            key: "food",
+            label: "Food",
+            usedKg: Math.round(categoryUsage.food),
+            budgetKg: calcs.foodScore,
+            impact: calcs.foodScore > 150 ? "High" : calcs.foodScore > 80 ? "Medium" : "Low",
+            color: "var(--chart-2)",
+          },
+          {
+            key: "energy",
+            label: "Energy",
+            usedKg: Math.round(categoryUsage.energy),
+            budgetKg: calcs.energyScore,
+            impact: calcs.energyScore > 100 ? "High" : calcs.energyScore > 50 ? "Medium" : "Low",
+            color: "var(--chart-3)",
+          },
+          {
+            key: "shopping",
+            label: "Shopping",
+            usedKg: Math.round(categoryUsage.shopping),
+            budgetKg: calcs.shopScore,
+            impact: calcs.shopScore > 80 ? "High" : calcs.shopScore > 40 ? "Medium" : "Low",
+            color: "var(--chart-4)",
+          },
         ]);
       }
 
       if (activities && activities.length > 0) {
-        setRecentActivityState(activities.map((a: Tables<"activities">) => ({
-          id: a.id,
-          label: a.label,
-          category: a.category,
-          kg: Number(a.kg),
-          when: new Date(a.created_at).toLocaleDateString("en-US", { weekday: 'short', hour: '2-digit', minute: '2-digit' })
-        })));
+        setRecentActivityState(
+          activities.map((a: Tables<"activities">) => ({
+            id: a.id,
+            label: a.label,
+            category: a.category,
+            kg: Number(a.kg),
+            when: new Date(a.created_at).toLocaleDateString("en-US", {
+              weekday: "short",
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+          })),
+        );
       }
 
       if (goals && goals.length > 0) {
-        setWeeklyGoalsState(goals.map((g: Tables<"goals">) => ({
-          id: g.id,
-          title: g.title,
-          progress: g.progress,
-          reward: g.reward,
-          completed: g.completed
-        })));
+        setWeeklyGoalsState(
+          goals.map((g: Tables<"goals">) => ({
+            id: g.id,
+            title: g.title,
+            progress: g.progress,
+            reward: g.reward,
+            completed: g.completed,
+          })),
+        );
       }
-
     } catch (err) {
       console.error("Error loading user data from Supabase", err);
     } finally {
@@ -319,18 +400,50 @@ export const CarbonDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       name: profile?.name || carbonProfileState.name,
       city: profile?.city || carbonProfileState.city,
       joined: carbonProfileState.joined,
-      answers
+      answers,
     };
 
     const newCategories: CategoryData[] = [
-      { key: "transport", label: "Transportation", usedKg: 0, budgetKg: scores.transScore, impact: scores.transScore > 150 ? "High" : scores.transScore > 80 ? "Medium" : "Low", color: "var(--chart-1)" },
-      { key: "food", label: "Food", usedKg: 0, budgetKg: scores.foodScore, impact: scores.foodScore > 150 ? "High" : scores.foodScore > 80 ? "Medium" : "Low", color: "var(--chart-2)" },
-      { key: "energy", label: "Energy", usedKg: 0, budgetKg: scores.energyScore, impact: scores.energyScore > 100 ? "High" : scores.energyScore > 50 ? "Medium" : "Low", color: "var(--chart-3)" },
-      { key: "shopping", label: "Shopping", usedKg: 0, budgetKg: scores.shopScore, impact: scores.shopScore > 80 ? "High" : scores.shopScore > 40 ? "Medium" : "Low", color: "var(--chart-4)" },
+      {
+        key: "transport",
+        label: "Transportation",
+        usedKg: 0,
+        budgetKg: scores.transScore,
+        impact: scores.transScore > 150 ? "High" : scores.transScore > 80 ? "Medium" : "Low",
+        color: "var(--chart-1)",
+      },
+      {
+        key: "food",
+        label: "Food",
+        usedKg: 0,
+        budgetKg: scores.foodScore,
+        impact: scores.foodScore > 150 ? "High" : scores.foodScore > 80 ? "Medium" : "Low",
+        color: "var(--chart-2)",
+      },
+      {
+        key: "energy",
+        label: "Energy",
+        usedKg: 0,
+        budgetKg: scores.energyScore,
+        impact: scores.energyScore > 100 ? "High" : scores.energyScore > 50 ? "Medium" : "Low",
+        color: "var(--chart-3)",
+      },
+      {
+        key: "shopping",
+        label: "Shopping",
+        usedKg: 0,
+        budgetKg: scores.shopScore,
+        impact: scores.shopScore > 80 ? "High" : scores.shopScore > 40 ? "Medium" : "Low",
+        color: "var(--chart-4)",
+      },
     ];
 
     const defaultGoals = [
-      { title: "Bike to work 2× this week", progress: 0, reward: `−${Math.round(scores.transScore * 0.15)} kg CO₂e` },
+      {
+        title: "Bike to work 2× this week",
+        progress: 0,
+        reward: `−${Math.round(scores.transScore * 0.15)} kg CO₂e`,
+      },
       { title: "Skip one food delivery", progress: 0, reward: "−3 kg CO₂e" },
       { title: "Plant-based dinners ×4", progress: 0, reward: "−6 kg CO₂e" },
     ];
@@ -349,9 +462,8 @@ export const CarbonDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     // Update in Supabase if logged in
     if (user) {
       try {
-        const { error: profileUpsertErr } = await supabase
-          .from("carbon_profiles")
-          .upsert({
+        const { error: profileUpsertErr } = await supabase.from("carbon_profiles").upsert(
+          {
             user_id: user.id,
             commute_mode: answers.commute,
             weekly_distance: answers.distance,
@@ -363,29 +475,32 @@ export const CarbonDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             food_score: scores.foodScore,
             energy_score: scores.energyScore,
             shopping_score: scores.shopScore,
-          }, { onConflict: "user_id" });
+          },
+          { onConflict: "user_id" },
+        );
 
-        const { error: budgetUpsertErr } = await supabase
-          .from("carbon_budgets")
-          .upsert({
+        const { error: budgetUpsertErr } = await supabase.from("carbon_budgets").upsert(
+          {
             user_id: user.id,
             monthly_budget: scores.monthlyBudget,
             current_usage: 0,
-            remaining_budget: scores.monthlyBudget
-          }, { onConflict: "user_id" });
+            remaining_budget: scores.monthlyBudget,
+          },
+          { onConflict: "user_id" },
+        );
 
         // Clean out existing goals and insert new ones
         await supabase.from("goals").delete().eq("user_id", user.id);
         await supabase.from("activities").delete().eq("user_id", user.id);
 
         await supabase.from("goals").insert(
-          defaultGoals.map(g => ({
+          defaultGoals.map((g) => ({
             user_id: user.id,
             title: g.title,
             progress: g.progress,
             reward: g.reward,
-            completed: false
-          }))
+            completed: false,
+          })),
         );
 
         toast.success("Carbon Profile saved and synced with cloud!");
@@ -404,7 +519,7 @@ export const CarbonDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       label,
       category,
       kg,
-      when: "Just now"
+      when: "Just now",
     };
 
     const updatedActivities = [newActivity, ...recentActivityState];
@@ -412,7 +527,7 @@ export const CarbonDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     localStorage.setItem("cc_activities", JSON.stringify(updatedActivities));
 
     // Update categories usage
-    const updatedCategories = categoriesState.map(cat => {
+    const updatedCategories = categoriesState.map((cat) => {
       if (cat.key === category) {
         const newUsed = Number((cat.usedKg + kg).toFixed(1));
         return { ...cat, usedKg: newUsed };
@@ -427,7 +542,7 @@ export const CarbonDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     const updatedProfile = {
       ...carbonProfileState,
       usedKg: newUsedKg,
-      remainingKg: Math.max(0, Number((carbonProfileState.monthlyBudgetKg - newUsedKg).toFixed(1)))
+      remainingKg: Math.max(0, Number((carbonProfileState.monthlyBudgetKg - newUsedKg).toFixed(1))),
     };
     setCarbonProfileState(updatedProfile);
     localStorage.setItem("cc_profile", JSON.stringify(updatedProfile));
@@ -441,10 +556,13 @@ export const CarbonDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           kg,
         });
 
-        await supabase.from("carbon_budgets").update({
-          current_usage: newUsedKg,
-          remaining_budget: updatedProfile.remainingKg
-        }).eq("user_id", user.id);
+        await supabase
+          .from("carbon_budgets")
+          .update({
+            current_usage: newUsedKg,
+            remaining_budget: updatedProfile.remainingKg,
+          })
+          .eq("user_id", user.id);
 
         toast.success("Activity logged to cloud!");
       } catch (err) {
@@ -457,7 +575,7 @@ export const CarbonDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   };
 
   const updateGoalProgress = async (title: string, progress: number) => {
-    const updatedGoals = weeklyGoalsState.map(g => {
+    const updatedGoals = weeklyGoalsState.map((g) => {
       if (g.title === title) {
         return { ...g, progress, completed: progress >= 100 };
       }
@@ -498,7 +616,7 @@ export const CarbonDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       name: "Guest User",
       city: "Offline Mode",
       joined: "Today",
-      answers: {}
+      answers: {},
     });
     localStorage.removeItem("cc_profile");
     localStorage.removeItem("cc_categories");
@@ -508,21 +626,23 @@ export const CarbonDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   };
 
   return (
-    <CarbonDataContext.Provider value={{
-      user,
-      loading,
-      profile,
-      carbonProfile: carbonProfileState,
-      categories: categoriesState,
-      weeklyGoals: weeklyGoalsState,
-      recentActivity: recentActivityState,
-      monthlyTrend: monthlyTrendState,
-      saveOnboarding,
-      logNewActivity,
-      updateGoalProgress,
-      refreshData,
-      signOutUser
-    }}>
+    <CarbonDataContext.Provider
+      value={{
+        user,
+        loading,
+        profile,
+        carbonProfile: carbonProfileState,
+        categories: categoriesState,
+        weeklyGoals: weeklyGoalsState,
+        recentActivity: recentActivityState,
+        monthlyTrend: monthlyTrendState,
+        saveOnboarding,
+        logNewActivity,
+        updateGoalProgress,
+        refreshData,
+        signOutUser,
+      }}
+    >
       {children}
     </CarbonDataContext.Provider>
   );
