@@ -1,9 +1,7 @@
 import { createStart, createMiddleware } from "@tanstack/react-start";
-import { createCsrfMiddleware } from "@tanstack/react-start";
 
 import { renderErrorPage } from "./lib/error-page";
 import { attachFirebaseAuth } from "@/integrations/firebase/auth-attacher";
-import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
 
 const errorMiddleware = createMiddleware().server(async ({ next }) => {
   try {
@@ -20,11 +18,7 @@ const errorMiddleware = createMiddleware().server(async ({ next }) => {
   }
 });
 
-const csrfMiddleware = createCsrfMiddleware({
-  filter: (ctx) => ctx.handlerType === "serverFn",
-});
-
 export const startInstance = createStart(() => ({
-  functionMiddleware: [attachSupabaseAuth, attachFirebaseAuth],
-  requestMiddleware: [errorMiddleware, csrfMiddleware],
+  functionMiddleware: [attachFirebaseAuth],
+  requestMiddleware: [errorMiddleware],
 }));
