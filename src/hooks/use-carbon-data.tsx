@@ -15,6 +15,7 @@ import {
 } from "firebase/firestore";
 import { User } from "firebase/auth";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 import { OnboardingAnswers, calculateBudget } from "@/lib/carbon-utils";
 
