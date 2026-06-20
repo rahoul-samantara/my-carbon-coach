@@ -15,7 +15,8 @@ import {
   ShoppingBag,
   CheckCircle2,
 } from "lucide-react";
-import { useCarbonData, calculateBudget } from "@/hooks/use-carbon-data";
+import { useCarbonData } from "@/hooks/use-carbon-data";
+import { calculateBudget } from "@/lib/carbon-utils";
 
 export const Route = createFileRoute("/onboarding")({
   head: () => ({ meta: [{ title: "Get started — Carbon Compass" }] }),
@@ -289,7 +290,7 @@ function Slider({
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
         className="mt-8 w-full accent-primary"
-        aria-label={unit}
+        aria-label={`Adjust ${unit} setting`}
       />
       <div className="flex justify-between text-xs text-muted-foreground mt-2">
         <span>{min}</span>

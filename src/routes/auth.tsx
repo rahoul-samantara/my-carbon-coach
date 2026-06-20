@@ -1,6 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { auth } from "@/integrations/firebase/client";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  updateProfile,
+} from "firebase/auth";
 import { Logo } from "@/components/Logo";
 import { Mail, Lock, User, ArrowRight, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
@@ -26,24 +31,12 @@ function AuthPage() {
 
     try {
       if (isSignUp) {
-        const { error: signUpError } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              full_name: name,
-            },
-          },
-        });
-        if (signUpError) throw signUpError;
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        await updateProfile(userCredential.user, { displayName: name });
         toast.success("Registration successful! Welcome to Carbon Compass.");
         navigate({ to: "/onboarding" });
       } else {
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (signInError) throw signInError;
+        await signInWithEmailAndPassword(auth, email, password);
         toast.success("Successfully logged in.");
         navigate({ to: "/" });
       }

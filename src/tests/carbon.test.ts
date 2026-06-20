@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { calculateBudget } from "../hooks/use-carbon-data";
+import { calculateBudget } from "../lib/carbon-utils";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // calculateBudget — Pure function unit tests

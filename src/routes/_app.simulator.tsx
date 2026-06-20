@@ -65,16 +65,15 @@ const levers: Lever[] = [
 
 function Simulator() {
   const { carbonProfile } = useCarbonData();
-  const answers = carbonProfile.answers || {};
-
   const initialValues = useMemo(() => {
+    const answers = carbonProfile.answers || {};
     return {
       transit: answers.commute === "transit" ? 4 : 1,
       car: answers.commute === "car" ? 6 : 2,
       delivery: answers.shopping === "often" ? 6 : answers.shopping === "weekly" ? 3 : 1,
       wfh: answers.wfh ?? 2,
     };
-  }, [answers]);
+  }, [carbonProfile.answers]);
 
   const [values, setValues] = useState<Record<string, number>>(initialValues);
 

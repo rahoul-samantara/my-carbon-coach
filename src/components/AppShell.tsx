@@ -57,7 +57,7 @@ export function AppShell({
         {/* Sidebar */}
         <aside className="hidden lg:flex w-60 shrink-0 flex-col rounded-3xl bg-sidebar p-5 ring-soft border border-sidebar-border h-[calc(100dvh-3rem)] sticky top-6">
           <Logo />
-          <nav className="mt-8 flex flex-col gap-1" aria-label="Primary">
+          <nav className="mt-8 flex flex-col gap-1" aria-label="Desktop Navigation">
             {nav.map((item) => {
               const active = item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
               const Icon = item.icon;
@@ -204,7 +204,7 @@ export function AppShell({
           {/* Mobile bottom nav */}
           <nav
             className="lg:hidden fixed bottom-3 left-3 right-3 z-40 rounded-2xl border border-border bg-card/95 backdrop-blur p-1.5 ring-lift flex justify-around"
-            aria-label="Primary"
+            aria-label="Mobile Navigation"
           >
             {nav.map((item) => {
               const active = item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);

@@ -1,17 +1,24 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { User } from "@supabase/supabase-js";
-import { Tables } from "@/integrations/supabase/types";
+import { auth, db } from "@/integrations/firebase/client";
+import { onAuthStateChanged } from "firebase/auth";
+import {
+  doc,
+  getDoc,
+  setDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+  orderBy,
+  deleteDoc,
+  writeBatch,
+} from "firebase/firestore";
+import { User } from "firebase/auth";
 import { toast } from "sonner";
 
-export type OnboardingAnswers = {
-  commute?: string;
-  distance?: number;
-  diet?: string;
-  household?: number;
-  shopping?: string;
-  wfh?: number;
-};
+import { OnboardingAnswers, calculateBudget } from "@/lib/carbon-utils";
+
+export type { OnboardingAnswers };
 
 export type CarbonProfile = {
   monthlyBudgetKg: number;
@@ -70,36 +77,6 @@ type CarbonDataContextProps = {
 };
 
 const CarbonDataContext = createContext<CarbonDataContextProps | undefined>(undefined);
-
-// Helper formulas for carbon calculations
-export const calculateBudget = (a: OnboardingAnswers) => {
-  const commute = a.commute || "car";
-  const dist = a.distance ?? 60;
-  const commuteMult =
-    commute === "car" ? 0.2 : commute === "rideshare" ? 0.25 : commute === "transit" ? 0.04 : 0;
-  const transScore = Math.round(dist * commuteMult * 4.33);
-
-  const diet = a.diet || "flexitarian";
-  const foodScore =
-    diet === "meat" ? 200 : diet === "flexitarian" ? 140 : diet === "vegetarian" ? 90 : 60;
-
-  const hh = a.household ?? 2;
-  const wfh = a.wfh ?? 2;
-  const energyScore = Math.round(120 / hh + wfh * 3);
-
-  const shop = a.shopping || "monthly";
-  const shopScore = shop === "rare" ? 15 : shop === "monthly" ? 30 : shop === "weekly" ? 65 : 120;
-
-  const monthlyBudget = transScore + foodScore + energyScore + shopScore;
-
-  return {
-    transScore,
-    foodScore,
-    energyScore,
-    shopScore,
-    monthlyBudget,
-  };
-};
 
 const defaultTrend = [
   { month: "Jan", kg: 555 },
@@ -205,81 +182,54 @@ export const CarbonDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   // Listen to Auth state changes
   useEffect(() => {
-    const getSession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        await loadUserData(session.user);
-      } else {
-        setLoading(false);
-      }
-    };
-
-    getSession();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        await loadUserData(session.user);
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        await loadUserData(currentUser);
       } else {
         setProfile(null);
         setLoading(false);
       }
     });
 
-    return () => {
-      subscription.unsubscribe();
-    };
+    return () => unsubscribe();
   }, []);
 
   const loadUserData = async (currentUser: User) => {
     try {
       setLoading(true);
       // 1. Load Profile
-      const { data: profileData, error: profileErr } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", currentUser.id)
-        .single();
+      const profileSnap = await getDoc(doc(db, "profiles", currentUser.uid));
+      const profileData = profileSnap.exists() ? profileSnap.data() : null;
 
       if (profileData) {
         setProfile({
-          name: profileData.name || currentUser.user_metadata?.full_name || "Eco User",
+          name: profileData.name || currentUser.displayName || "Eco User",
           email: profileData.email || currentUser.email || "",
-          city: profileData.city || currentUser.user_metadata?.city || "Brooklyn, NY",
+          city: profileData.city || "Brooklyn, NY",
         });
       }
 
       // 2. Load Carbon Profile
-      const { data: carbProf, error: carbProfErr } = await supabase
-        .from("carbon_profiles")
-        .select("*")
-        .eq("user_id", currentUser.id)
-        .single();
+      const carbProfSnap = await getDoc(doc(db, "carbon_profiles", currentUser.uid));
+      const carbProf = carbProfSnap.exists() ? carbProfSnap.data() : null;
 
       // 3. Load Carbon Budget
-      const { data: carbBudget, error: carbBudgetErr } = await supabase
-        .from("carbon_budgets")
-        .select("*")
-        .eq("user_id", currentUser.id)
-        .single();
+      const carbBudgetSnap = await getDoc(doc(db, "carbon_budgets", currentUser.uid));
+      const carbBudget = carbBudgetSnap.exists() ? carbBudgetSnap.data() : null;
 
       // 4. Load Activities
-      const { data: activities, error: actErr } = await supabase
-        .from("activities")
-        .select("*")
-        .eq("user_id", currentUser.id)
-        .order("created_at", { ascending: false });
+      const actQuery = query(collection(db, "activities"), where("user_id", "==", currentUser.uid));
+      const actDocs = await getDocs(actQuery);
+      const activities = actDocs.docs.map((d) => ({ id: d.id, ...d.data() }));
+      activities.sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+      );
 
       // 5. Load Goals
-      const { data: goals, error: goalsErr } = await supabase
-        .from("goals")
-        .select("*")
-        .eq("user_id", currentUser.id);
+      const goalsQuery = query(collection(db, "goals"), where("user_id", "==", currentUser.uid));
+      const goalsDocs = await getDocs(goalsQuery);
+      const goals = goalsDocs.docs.map((d) => ({ id: d.id, ...d.data() }));
 
       if (carbProf && carbBudget) {
         const answers: OnboardingAnswers = {
@@ -313,7 +263,7 @@ export const CarbonDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         // Compute actual category usage from logged activities
         const categoryUsage = { transport: 0, food: 0, energy: 0, shopping: 0 };
         if (activities) {
-          activities.forEach((act: Tables<"activities">) => {
+          activities.forEach((act: { category: string; kg: number | string }) => {
             const cat = act.category as keyof typeof categoryUsage;
             if (cat in categoryUsage) {
               categoryUsage[cat] += Number(act.kg);
@@ -359,29 +309,45 @@ export const CarbonDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
       if (activities && activities.length > 0) {
         setRecentActivityState(
-          activities.map((a: Tables<"activities">) => ({
-            id: a.id,
-            label: a.label,
-            category: a.category,
-            kg: Number(a.kg),
-            when: new Date(a.created_at).toLocaleDateString("en-US", {
-              weekday: "short",
-              hour: "2-digit",
-              minute: "2-digit",
+          activities.map(
+            (a: {
+              id: string;
+              label: string;
+              category: string;
+              kg: number | string;
+              created_at: string;
+            }) => ({
+              id: a.id,
+              label: a.label,
+              category: a.category,
+              kg: Number(a.kg),
+              when: new Date(a.created_at).toLocaleDateString("en-US", {
+                weekday: "short",
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
             }),
-          })),
+          ),
         );
       }
 
       if (goals && goals.length > 0) {
         setWeeklyGoalsState(
-          goals.map((g: Tables<"goals">) => ({
-            id: g.id,
-            title: g.title,
-            progress: g.progress,
-            reward: g.reward,
-            completed: g.completed,
-          })),
+          goals.map(
+            (g: {
+              id: string;
+              title: string;
+              progress: number;
+              reward: string;
+              completed: boolean;
+            }) => ({
+              id: g.id,
+              title: g.title,
+              progress: g.progress,
+              reward: g.reward,
+              completed: g.completed,
+            }),
+          ),
         );
       }
     } catch (err) {
@@ -605,7 +571,7 @@ export const CarbonDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   };
 
   const signOutUser = async () => {
-    await supabase.auth.signOut();
+    await auth.signOut();
     setUser(null);
     setProfile(null);
     // Reset to local template values
