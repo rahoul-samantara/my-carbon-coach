@@ -9,7 +9,6 @@
 
 ---
 
-
 ## 👥 Target Users
 
 **Urban Professionals** who are busy, use daily commutes, food delivery, and online shopping, and want to reduce their environmental impact but need actionable, personalized guidance.
@@ -43,6 +42,7 @@ monthlyBudget = sum of all scores
 ### Layer 2 — Agentic AI Coach (Gemini 2.5 Flash + Local Fallback Engine)
 
 For authenticated users, questions are routed to **Google Gemini 2.5 Flash** with the user's full carbon profile injected into the system prompt. The AI operates as an agentic planner:
+
 - It **analyzes the sentiment** of the user's query.
 - It formulates an **action plan** (step-by-step).
 - It returns **structured JSON** validated via Zod, which renders rich recommendation cards.
@@ -83,7 +83,6 @@ Activity logging updates both local state and Firebase Firestore in real time. T
 
 ---
 
-
 ## ☁️ Google Services Usage
 
 - **Gemini 2.5 Flash**: Provides personalized coaching and carbon reduction recommendations.
@@ -93,20 +92,19 @@ Activity logging updates both local state and Firebase Firestore in real time. T
 
 ## ✨ Key Features
 
-| Feature                       | Description                                                                   |
-| ----------------------------- | ----------------------------------------------------------------------------- |
-| 🤖 **Agentic AI Coach**       | Gemini 2.5 Flash calculates sentiment, plans actions, and returns JSON        |
-| 🔄 **Smart Fallback**         | Local rule-based engine for guests — zero API cost, zero downtime             |
-| 🛡️ **Rate Limiting & CSRF**   | Robust server-side protection to stop API key abuse and attacks               |
-| 📊 **Live Dashboard**         | Modular, real-time carbon budget gauge with category breakdowns               |
-| 🎯 **Simulator**              | Interactive what-if scenario modeling                                         |
-| ♿ **Accessible**             | Radix UI primitives, `aria-live`, `role="progressbar"`, WCAG 2.1 compliant    |
-| 🔒 **Secure**                 | Firebase Auth, Firestore Rules, API key in server-only env vars               |
-| 🧪 **Tested**                 | 35 unit tests covering all `calculateBudget` branches and edge cases          |
-| 📱 **Responsive**             | Mobile-first design with adaptive sidebar navigation                          |
+| Feature                     | Description                                                                |
+| --------------------------- | -------------------------------------------------------------------------- |
+| 🤖 **Agentic AI Coach**     | Gemini 2.5 Flash calculates sentiment, plans actions, and returns JSON     |
+| 🔄 **Smart Fallback**       | Local rule-based engine for guests — zero API cost, zero downtime          |
+| 🛡️ **Rate Limiting & CSRF** | Robust server-side protection to stop API key abuse and attacks            |
+| 📊 **Live Dashboard**       | Modular, real-time carbon budget gauge with category breakdowns            |
+| 🎯 **Simulator**            | Interactive what-if scenario modeling                                      |
+| ♿ **Accessible**           | Radix UI primitives, `aria-live`, `role="progressbar"`, WCAG 2.1 compliant |
+| 🔒 **Secure**               | Firebase Auth, Firestore Rules, API key in server-only env vars            |
+| 🧪 **Tested**               | 35 unit tests covering all `calculateBudget` branches and edge cases       |
+| 📱 **Responsive**           | Mobile-first design with adaptive sidebar navigation                       |
 
 ---
-
 
 ## 🏆 Hackathon Differentiators
 
