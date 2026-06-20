@@ -223,7 +223,7 @@ export const CarbonDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       // 4. Load Activities
       const actQuery = query(collection(db, "activities"), where("user_id", "==", currentUser.uid));
       const actDocs = await getDocs(actQuery);
-      const activities = actDocs.docs.map((d) => ({ id: d.id, ...d.data() }));
+      const activities: any[] = actDocs.docs.map((d) => ({ id: d.id, ...d.data() }));
       activities.sort(
         (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
       );
@@ -231,7 +231,7 @@ export const CarbonDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       // 5. Load Goals
       const goalsQuery = query(collection(db, "goals"), where("user_id", "==", currentUser.uid));
       const goalsDocs = await getDocs(goalsQuery);
-      const goals = goalsDocs.docs.map((d) => ({ id: d.id, ...d.data() }));
+      const goals: any[] = goalsDocs.docs.map((d) => ({ id: d.id, ...d.data() }));
 
       if (carbProf && carbBudget) {
         const answers: OnboardingAnswers = {
